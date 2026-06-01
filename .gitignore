@@ -1,0 +1,19 @@
+/EnterpriseHelpdeskApp/nbproject/private/
+/EnterpriseHelpdeskApp/EnterpriseHelpdeskApp-war/nbproject/private/
+/EnterpriseHelpdeskApp/EnterpriseHelpdeskApp-ejb/nbproject/private/
+
+# Compiled class files
+*.class
+
+# Maven build folders
+target/
+*.ear
+*.war
+*.jar
+
+# NetBeans specific folders
+nbproject/private/
+build/
+/EnterpriseHelpdeskApp-war/nbproject/private/
+/EnterpriseHelpdeskApp-ejb/nbproject/private/
+/EnterpriseHelpdeskApp-ejb/dist/
