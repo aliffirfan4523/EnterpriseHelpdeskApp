@@ -1,11 +1,10 @@
 package com.helpdesk.web;
 
 import com.helpdesk.domain.core.Ticket;
+import com.helpdesk.ejb.TicketManagerBean;
 import java.io.IOException;
 import java.util.List;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.TypedQuery;
+import javax.ejb.EJB;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -16,9 +15,8 @@ import javax.servlet.http.HttpSession;
 @WebServlet(name = "AdminDashboardServlet", urlPatterns = {"/AdminDashboardServlet"})
 public class AdminDashboardServlet extends HttpServlet {
 
-    // Automatically connects to your persistence.xml
-    @PersistenceContext(unitName = "HelpdeskPU")
-    private EntityManager em;
+    @EJB
+    private TicketManagerBean ticketManager;
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -31,10 +29,8 @@ public class AdminDashboardServlet extends HttpServlet {
             return;
         }
 
-        // 2. The JPQL Query: Fetch all tickets, newest first
-        String jpql = "SELECT t FROM Ticket t ORDER BY t.dateCreated DESC";
-        TypedQuery<Ticket> query = em.createQuery(jpql, Ticket.class);
-        List<Ticket> allTickets = query.getResultList();
+        // 2. Fetch all tickets using the EJB
+        List<Ticket> allTickets = ticketManager.getAllTicketsSortedByDate();
 
         // 3. Attach the list to the request and send it to the JSP
         request.setAttribute("ticketList", allTickets);

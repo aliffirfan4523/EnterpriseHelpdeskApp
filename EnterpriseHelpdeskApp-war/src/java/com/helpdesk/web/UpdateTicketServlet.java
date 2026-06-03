@@ -1,26 +1,19 @@
 package com.helpdesk.web;
 
-import com.helpdesk.domain.core.Ticket;
+import com.helpdesk.ejb.TicketManagerBean;
 import java.io.IOException;
-import javax.annotation.Resource;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+import javax.ejb.EJB;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.transaction.UserTransaction;
 
 @WebServlet(name = "UpdateTicketServlet", urlPatterns = {"/UpdateTicketServlet"})
 public class UpdateTicketServlet extends HttpServlet {
 
-    @PersistenceContext(unitName = "HelpdeskPU")
-    private EntityManager em;
-
-    // Required to manually commit changes to the database in a Servlet
-    @Resource
-    private UserTransaction utx; 
+    @EJB
+    private TicketManagerBean ticketManager;
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -34,18 +27,8 @@ public class UpdateTicketServlet extends HttpServlet {
             try {
                 int ticketId = Integer.parseInt(ticketIdStr);
                 
-                // Begin the database transaction
-                utx.begin();
-                
-                // Find the specific ticket, update the status, and merge it back
-                Ticket ticket = em.find(Ticket.class, ticketId);
-                if (ticket != null) {
-                    ticket.setStatus(newStatus);
-                    em.merge(ticket);
-                }
-                
-                // Save the changes
-                utx.commit();
+                // Update the ticket status using the EJB
+                ticketManager.updateTicketStatus(ticketId, newStatus);
                 
             } catch (Exception e) {
                 e.printStackTrace();
