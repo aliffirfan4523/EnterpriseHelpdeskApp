@@ -1,11 +1,13 @@
 package com.helpdesk.ejb;
 
-import com.helpdesk.domain.core.Ticket;
 import java.util.List;
+
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
+
+import com.helpdesk.domain.core.Ticket;
 
 @Stateless
 public class TicketManagerBean {

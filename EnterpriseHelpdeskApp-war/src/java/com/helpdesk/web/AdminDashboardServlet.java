@@ -12,6 +12,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import javax.servlet.annotation.WebServlet;
+
 @WebServlet(name = "AdminDashboardServlet", urlPatterns = {"/AdminDashboardServlet"})
 public class AdminDashboardServlet extends HttpServlet {
 
@@ -33,6 +35,7 @@ public class AdminDashboardServlet extends HttpServlet {
         List<Ticket> allTickets = ticketManager.getAllTicketsSortedByDate();
 
         // 3. Attach the list to the request and send it to the JSP
+        System.out.println("DEBUG: allTickets size = " + (allTickets != null ? allTickets.size() : "null"));
         request.setAttribute("ticketList", allTickets);
         request.getRequestDispatcher("admin.jsp").forward(request, response);
     }
