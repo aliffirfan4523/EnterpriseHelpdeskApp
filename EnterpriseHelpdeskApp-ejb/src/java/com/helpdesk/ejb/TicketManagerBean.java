@@ -28,4 +28,21 @@ public class TicketManagerBean {
             em.merge(ticket);
         }
     }
+    
+    public List<Ticket> getTicketsByUser(int userId) {
+        
+        String jpql =
+        "SELECT t FROM Ticket t " +
+        "WHERE t.user.id = :userId " +
+        "ORDER BY t.dateCreated DESC";
+
+        return em.createQuery(jpql, Ticket.class)
+            .setParameter("userId", userId)
+            .getResultList();
+    }
+    
+    public void createTicket(Ticket ticket) {
+    em.persist(ticket);
+
+    }
 }

@@ -1,92 +1,69 @@
 package com.helpdesk.web;
 
+import com.helpdesk.domain.core.Priority;
+import com.helpdesk.domain.core.Ticket;
+import com.helpdesk.domain.core.User;
+import com.helpdesk.ejb.TicketManagerBean;
+
 import java.io.IOException;
+import javax.ejb.EJB;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
+@WebServlet(name = "SubmitTicketServlet",
+        urlPatterns = {"/SubmitTicketServlet"})
 public class SubmitTicketServlet extends HttpServlet {
 
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
+    @EJB
+    private TicketManagerBean ticketManagerBean;
+
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request,
+            HttpServletResponse response)
+            throws ServletException, IOException {
 
-        String userPath = request.getServletPath();
+        HttpSession session = request.getSession(false);
 
-        // if category page is requested
-        if (userPath.equals("/category")) {
-            // TODO: Implement category request
-
-        // if cart page is requested
-        } else if (userPath.equals("/viewCart")) {
-            // TODO: Implement cart page request
-
-            userPath = "/cart";
-
-        // if checkout page is requested
-        } else if (userPath.equals("/checkout")) {
-            // TODO: Implement checkout page request
-
-        // if user switches language
-        } else if (userPath.equals("/chooseLanguage")) {
-            // TODO: Implement language request
-
+        if (session == null || session.getAttribute("userId") == null) {
+            response.sendRedirect("TestLogin?role=Employee");
+            return;
         }
-
-        // use RequestDispatcher to forward request internally
-        String url = "/WEB-INF/view" + userPath + ".jsp";
 
         try {
-            request.getRequestDispatcher(url).forward(request, response);
+
+            String title = request.getParameter("title");
+            String description = request.getParameter("description");
+            int priorityId = Integer.parseInt(
+                    request.getParameter("priorityId"));
+
+            int userId = (Integer) session.getAttribute("userId");
+
+            User user = new User();
+            user.setId(userId);
+
+            Priority priority = new Priority();
+            priority.setId(priorityId);
+
+            Ticket ticket = new Ticket();
+            ticket.setTitle(title);
+            ticket.setDescription(description);
+            ticket.setStatus("Open");
+            ticket.setUser(user);
+            ticket.setPriority(priority);
+
+            ticketManagerBean.createTicket(ticket);
+
+            response.sendRedirect("EmployeeDashboardServlet");
+
         } catch (Exception ex) {
             ex.printStackTrace();
+            response.getWriter().println(
+                    "Error submitting ticket: "
+                    + ex.getMessage());
         }
     }
-
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
-
-        String userPath = request.getServletPath();
-
-        // if addToCart action is called
-        if (userPath.equals("/addToCart")) {
-            // TODO: Implement add product to cart action
-
-        // if updateCart action is called
-        } else if (userPath.equals("/updateCart")) {
-            // TODO: Implement update cart action
-
-        // if purchase action is called
-        } else if (userPath.equals("/purchase")) {
-            // TODO: Implement purchase action
-
-            userPath = "/confirmation";
-        }
-
-        // use RequestDispatcher to forward request internally
-        String url = "/WEB-INF/view" + userPath + ".jsp";
-
-        try {
-            request.getRequestDispatcher(url).forward(request, response);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
 }
