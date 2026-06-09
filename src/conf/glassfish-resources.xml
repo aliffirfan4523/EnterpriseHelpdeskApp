@@ -10,5 +10,5 @@
         <property name="URL" value="jdbc:mysql://localhost:3306/helpdesk_db?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;zeroDateTimeBehavior=CONVERT_TO_NULL&amp;serverTimezone=GMT%2B8"/>
         <property name="driverClass" value="com.mysql.cj.jdbc.Driver"/>
     </jdbc-connection-pool>
-    <jdbc-resource enabled="true" jndi-name="java:app/jdbc/helpdeskDB" object-type="user" pool-name="mysql_helpdesk_db_rootPool"/>
+    <jdbc-resource enabled="true" jndi-name="java:app/jdbc/helpdesk_db" object-type="user" pool-name="mysql_helpdesk_db_rootPool"/>
 </resources>

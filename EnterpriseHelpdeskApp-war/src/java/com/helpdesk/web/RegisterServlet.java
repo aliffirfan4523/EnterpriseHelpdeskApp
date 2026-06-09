@@ -1,92 +1,74 @@
 package com.helpdesk.web;
 
 import java.io.IOException;
+
+import javax.ejb.EJB;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.helpdesk.domain.core.User;
+import com.helpdesk.domain.core.Department;
+import com.helpdesk.ejb.UserManagerBean;
+import java.util.List;
+
+@WebServlet(name = "Register", urlPatterns = { "/Register" })
 public class RegisterServlet extends HttpServlet {
 
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
+    @EJB
+    private UserManagerBean userManagerBean;
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
-
-        String userPath = request.getServletPath();
-
-        // if category page is requested
-        if (userPath.equals("/category")) {
-            // TODO: Implement category request
-
-        // if cart page is requested
-        } else if (userPath.equals("/viewCart")) {
-            // TODO: Implement cart page request
-
-            userPath = "/cart";
-
-        // if checkout page is requested
-        } else if (userPath.equals("/checkout")) {
-            // TODO: Implement checkout page request
-
-        // if user switches language
-        } else if (userPath.equals("/chooseLanguage")) {
-            // TODO: Implement language request
-
-        }
-
-        // use RequestDispatcher to forward request internally
-        String url = "/WEB-INF/view" + userPath + ".jsp";
-
-        try {
-            request.getRequestDispatcher(url).forward(request, response);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+            throws ServletException, IOException {
+        List<Department> departments = userManagerBean.getAllDepartments();
+        request.setAttribute("departments", departments);
+        request.getRequestDispatcher("register.jsp").forward(request, response);
     }
 
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
+            throws ServletException, IOException {
 
-        String userPath = request.getServletPath();
+        String fullname = request.getParameter("fullname");
+        String email = request.getParameter("email");
+        String password = request.getParameter("password");
+        String confirmPassword = request.getParameter("confirmPassword");
+        String departmentIdStr = request.getParameter("departmentId");
 
-        // if addToCart action is called
-        if (userPath.equals("/addToCart")) {
-            // TODO: Implement add product to cart action
-
-        // if updateCart action is called
-        } else if (userPath.equals("/updateCart")) {
-            // TODO: Implement update cart action
-
-        // if purchase action is called
-        } else if (userPath.equals("/purchase")) {
-            // TODO: Implement purchase action
-
-            userPath = "/confirmation";
+        // 1. Check if passwords match
+        if (!password.equals(confirmPassword)) {
+            request.setAttribute("error", "Passwords do not match!");
+            request.getRequestDispatcher("register.jsp").forward(request, response);
+            return;
         }
-
-        // use RequestDispatcher to forward request internally
-        String url = "/WEB-INF/view" + userPath + ".jsp";
 
         try {
-            request.getRequestDispatcher(url).forward(request, response);
-        } catch (Exception ex) {
-            ex.printStackTrace();
+            // 2. Create new User entity
+            User newUser = new User();
+            newUser.setName(fullname);
+            newUser.setEmail(email);
+            newUser.setPassword(password);
+            newUser.setRole("Employee"); // Default role for registration
+
+            if (departmentIdStr != null && !departmentIdStr.isEmpty()) {
+                int deptId = Integer.parseInt(departmentIdStr);
+                Department dept = userManagerBean.findDepartmentById(deptId);
+                newUser.setDepartment(dept);
+            }
+
+            // 3. Save to database
+            userManagerBean.registerUser(newUser);
+
+            System.out.println("Registered User: " + fullname + " | Email: " + email);
+            response.sendRedirect("index.jsp?success=registered");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("error", "Failed to register user. Please try again.");
+            request.getRequestDispatcher("register.jsp").forward(request, response);
         }
     }
-
 }

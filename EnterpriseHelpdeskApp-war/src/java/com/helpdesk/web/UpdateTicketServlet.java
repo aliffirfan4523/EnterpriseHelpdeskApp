@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet(name = "UpdateTicketServlet", urlPatterns = {"/UpdateTicketServlet"})
+@WebServlet(name = "UpdateTicket", urlPatterns = {"/UpdateTicket"})
 public class UpdateTicketServlet extends HttpServlet {
 
     @EJB

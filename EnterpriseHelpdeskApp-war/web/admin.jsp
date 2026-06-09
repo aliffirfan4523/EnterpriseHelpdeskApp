@@ -44,22 +44,27 @@
             
             <div class="search-bar">
                 <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search tickets...">
+                <input type="text" id="ticketSearch" placeholder="Search tickets..." onkeyup="filterTickets()">
             </div>
 
             <div class="topbar-actions">
                 <i class="far fa-bell"></i>
                 <i class="far fa-question-circle"></i>
-                <div class="avatar">
-                    <!-- Display first letter of logged in user -->
-                    <c:choose>
-                        <c:when test="${not empty sessionScope.userName}">
-                            ${fn:substring(sessionScope.userName, 0, 1)}
-                        </c:when>
-                        <c:otherwise>
-                            U
-                        </c:otherwise>
-                    </c:choose>
+                <div class="user-menu-container" style="position: relative;">
+                    <div class="avatar" onclick="toggleUserMenu()" style="cursor: pointer;">
+                        <!-- Display first letter of logged in user -->
+                        <c:choose>
+                            <c:when test="${not empty sessionScope.userName}">
+                                ${fn:substring(sessionScope.userName, 0, 1)}
+                            </c:when>
+                            <c:otherwise>
+                                U
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+                    <div class="user-dropdown" id="adminUserDropdown">
+                        <a href="Logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </div>
                 </div>
             </div>
         </header>
@@ -85,10 +90,11 @@
                                 <th>Priority</th>
                                 <th>Status</th>
                                 <th>Assigned To</th>
+                                <th>Tags</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="ticketTableBody">
                             <!-- Iterate over tickets passed from servlet -->
                             <c:forEach var="ticket" items="${ticketList}">
                                 <tr>
@@ -142,14 +148,37 @@
                                         </div>
                                     </td>
                                     
-                                    <!-- Using placeholder for assigned to as it's not in the entity yet -->
-                                    <td style="color: var(--text-muted);">Unassigned</td>
+                                    <!-- Display the user's department -->
+                                    <td style="color: var(--text-muted);">
+                                        <c:choose>
+                                            <c:when test="${not empty ticket.user.department}">
+                                                ${ticket.user.department.name}
+                                            </c:when>
+                                            <c:otherwise>
+                                                Unassigned
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                    
+                                    <!-- Display Tags -->
+                                    <td>
+                                        <c:choose>
+                                            <c:when test="${not empty ticket.tags}">
+                                                <c:forEach var="tag" items="${ticket.tags}">
+                                                    <span class="badge" style="background-color: #e2e8f0; color: #475569; margin-right: 4px; font-weight: 500;">#${tag.name}</span>
+                                                </c:forEach>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span style="color: var(--text-muted); font-size: 12px;">-</span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </td>
                                     
                                     <td>
                                         <div class="actions">
                                             <i class="fas fa-exchange-alt" title="Change Status"></i>
                                             <i class="fas fa-tag" title="Edit Tags"></i>
-                                            <a href="ViewTicketServlet?ticketId=${ticket.id}" style="color: inherit; text-decoration: none;">
+                                            <a href="ViewTicket?ticketId=${ticket.id}" style="color: inherit; text-decoration: none;">
                                                 <i class="far fa-eye" title="View Details"></i>
                                             </a>
                                         </div>
@@ -160,7 +189,7 @@
                             <!-- Placeholder if list is empty -->
                             <c:if test="${empty ticketList}">
                                 <tr>
-                                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                                    <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">
                                         No active tickets found.
                                     </td>
                                 </tr>
@@ -189,5 +218,44 @@
         </div>
     </main>
 
+    <script>
+        function toggleUserMenu() {
+            document.getElementById("adminUserDropdown").classList.toggle("show");
+        }
+        
+        window.onclick = function(event) {
+            if (!event.target.matches('.avatar') && !event.target.closest('.avatar')) {
+                var dropdowns = document.getElementsByClassName("user-dropdown");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
+        }
+
+        // Search Filter Function
+        function filterTickets() {
+            let input = document.getElementById("ticketSearch").value.toLowerCase();
+            let tbody = document.getElementById("ticketTableBody");
+            let tr = tbody.getElementsByTagName("tr");
+
+            for (let i = 0; i < tr.length; i++) {
+                // Skip the "No active tickets found" row if present
+                if (tr[i].getElementsByTagName("td").length === 1) continue;
+                
+                // Get all text content from the row
+                let textContent = tr[i].textContent || tr[i].innerText;
+                
+                // Toggle display based on match
+                if (textContent.toLowerCase().indexOf(input) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    </script>
 </body>
 </html>

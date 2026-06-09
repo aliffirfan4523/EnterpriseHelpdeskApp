@@ -6,6 +6,7 @@ package com.helpdesk.domain.core;
 
 import javax.persistence.*;
 import java.io.Serializable;
+
 /**
  *
  * @author aliff
@@ -13,6 +14,7 @@ import java.io.Serializable;
 @Entity
 @Table(name = "users")
 public class User implements Serializable {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
@@ -26,9 +28,15 @@ public class User implements Serializable {
     @Column(length = 20)
     private String role;
 
+    // Added password field for authentication
+    @Column(length = 255)
+    private String password;
+
     @ManyToOne
-    @JoinColumn(name = "department_id", nullable = false)
+    @JoinColumn(name = "department_id")
     private Department department;
+
+    // --- Getters and Setters ---
 
     public int getId() {
         return id;
@@ -62,6 +70,16 @@ public class User implements Serializable {
         this.role = role;
     }
 
+    // New getter for password
+    public String getPassword() {
+        return password;
+    }
+
+    // New setter for password
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     public Department getDepartment() {
         return department;
     }
@@ -69,6 +87,4 @@ public class User implements Serializable {
     public void setDepartment(Department department) {
         this.department = department;
     }
-
-    
 }

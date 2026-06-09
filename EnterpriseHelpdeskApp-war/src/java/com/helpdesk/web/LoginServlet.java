@@ -1,92 +1,60 @@
 package com.helpdesk.web;
 
 import java.io.IOException;
+
+import javax.ejb.EJB;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
+import com.helpdesk.domain.core.User;
+import com.helpdesk.ejb.UserManagerBean;
+
+@WebServlet(name = "Login", urlPatterns = { "/Login" })
 public class LoginServlet extends HttpServlet {
 
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
+    @EJB
+    private UserManagerBean userManagerBean;
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
-
-        String userPath = request.getServletPath();
-
-        // if category page is requested
-        if (userPath.equals("/category")) {
-            // TODO: Implement category request
-
-        // if cart page is requested
-        } else if (userPath.equals("/viewCart")) {
-            // TODO: Implement cart page request
-
-            userPath = "/cart";
-
-        // if checkout page is requested
-        } else if (userPath.equals("/checkout")) {
-            // TODO: Implement checkout page request
-
-        // if user switches language
-        } else if (userPath.equals("/chooseLanguage")) {
-            // TODO: Implement language request
-
-        }
-
-        // use RequestDispatcher to forward request internally
-        String url = "/WEB-INF/view" + userPath + ".jsp";
-
-        try {
-            request.getRequestDispatcher(url).forward(request, response);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+            throws ServletException, IOException {
+        response.sendRedirect("index.jsp");
     }
 
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
+            throws ServletException, IOException {
 
-        String userPath = request.getServletPath();
+        String email = request.getParameter("email");
+        String password = request.getParameter("password");
+        String role = request.getParameter("role");
 
-        // if addToCart action is called
-        if (userPath.equals("/addToCart")) {
-            // TODO: Implement add product to cart action
+        // 1. Check database for valid user
+        User loggedInUser = userManagerBean.authenticate(email, password, role);
 
-        // if updateCart action is called
-        } else if (userPath.equals("/updateCart")) {
-            // TODO: Implement update cart action
+        if (loggedInUser != null) {
+            // 2. User found, create session
+            HttpSession session = request.getSession();
+            session.setAttribute("email", loggedInUser.getEmail());
+            session.setAttribute("role", loggedInUser.getRole());
+            session.setAttribute("userId", loggedInUser.getId()); // Good practice to store ID
+            session.setAttribute("name", loggedInUser.getName());
 
-        // if purchase action is called
-        } else if (userPath.equals("/purchase")) {
-            // TODO: Implement purchase action
+            // 3. Redirect based on role
+            if ("Admin".equals(loggedInUser.getRole())) {
+                response.sendRedirect("AdminDashboard");
+            } else {
+                response.sendRedirect("EmployeeDashboard");
+            }
 
-            userPath = "/confirmation";
-        }
-
-        // use RequestDispatcher to forward request internally
-        String url = "/WEB-INF/view" + userPath + ".jsp";
-
-        try {
-            request.getRequestDispatcher(url).forward(request, response);
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } else {
+            // 4. Invalid credentials
+            request.setAttribute("error", "Invalid Email, Password, or Role mismatch.");
+            request.getRequestDispatcher("index.jsp").forward(request, response);
         }
     }
-
 }

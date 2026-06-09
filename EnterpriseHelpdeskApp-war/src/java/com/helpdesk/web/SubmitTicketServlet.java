@@ -14,8 +14,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-@WebServlet(name = "SubmitTicketServlet",
-        urlPatterns = {"/SubmitTicketServlet"})
+@WebServlet(name = "SubmitTicket",
+        urlPatterns = {"/SubmitTicket"})
 public class SubmitTicketServlet extends HttpServlet {
 
     @EJB
@@ -57,7 +57,7 @@ public class SubmitTicketServlet extends HttpServlet {
 
             ticketManagerBean.createTicket(ticket);
 
-            response.sendRedirect("EmployeeDashboardServlet");
+            response.sendRedirect("EmployeeDashboard");
 
         } catch (Exception ex) {
             ex.printStackTrace();

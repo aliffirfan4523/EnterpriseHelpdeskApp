@@ -39,17 +39,13 @@
             <li>
                 <a href="#">Tickets</a>
             </li>
-
-            <li>
-                <a href="#">Settings</a>
-            </li>
         </ul>
 
-        <div class="sidebar-footer">
+        <%--<div class="sidebar-footer">
             <button class="create-ticket-btn">
                 + Create Ticket
             </button>
-        </div>
+        </div>--%>
 
     </div>
 
@@ -73,8 +69,17 @@
                     ?
                 </div>
 
-                <div class="avatar">
-                    E
+                <div class="user-menu-container" style="position: relative;">
+                    <div class="avatar" onclick="toggleUserMenu()">
+                        <%
+                            String userName = (String) session.getAttribute("name");
+                            String initial = (userName != null && !userName.isEmpty()) ? userName.substring(0, 1).toUpperCase() : "E";
+                        %>
+                        <%= initial %>
+                    </div>
+                    <div class="user-dropdown" id="employeeUserDropdown">
+                        <a href="Logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </div>
                 </div>
 
             </div>
@@ -101,7 +106,7 @@
 
                     <h2>New Ticket</h2>
 
-                    <form action="SubmitTicketServlet" method="post">
+                    <form action="SubmitTicket" method="post">
 
                         <div class="form-group">
 
@@ -261,5 +266,22 @@
 
     </div>
 
+    <script>
+        function toggleUserMenu() {
+            document.getElementById("employeeUserDropdown").classList.toggle("show");
+        }
+        
+        window.onclick = function(event) {
+            if (!event.target.matches('.avatar') && !event.target.closest('.avatar')) {
+                var dropdowns = document.getElementsByClassName("user-dropdown");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
+        }
+    </script>
 </body>
 </html>

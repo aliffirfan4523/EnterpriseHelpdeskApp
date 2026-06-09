@@ -36,14 +36,21 @@ GlassFish does **not** include a MySQL driver by default. You must add it manual
 
 ### Step 2: Create the Database
 
-1. Open your MySQL client (MySQL Workbench, phpMyAdmin, or terminal).
-2. Run the SQL script included in this project:
+We have provided a Python automation script to easily configure the database.
+
+1. Ensure you have Python installed.
+2. Ensure the `mysql` CLI tool is in your system PATH.
+3. Run the setup script from the root directory:
+   ```bash
+   python setup_db.py
+   ```
+   
+   Alternatively, you can manually run the SQL script via your MySQL client:
    ```sql
    source script.sql
    ```
-   Or copy and paste the contents of `script.sql` into your MySQL client and execute it.
 
-   This script will:
+   This will:
    - Create the `helpdesk_db` database
    - Create all required tables (`departments`, `priorities`, `users`, `tickets`, `comments`, `tags`, `ticket_tags`)
    - Insert sample/mock data for testing
