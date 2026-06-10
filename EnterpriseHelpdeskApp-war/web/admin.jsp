@@ -32,8 +32,6 @@
             </div>
 
             <div class="topbar-actions">
-                <i class="far fa-bell"></i>
-                <i class="far fa-question-circle"></i>
                 <div class="user-menu-container" style="position: relative;">
                     <div class="avatar" onclick="toggleUserMenu()" style="cursor: pointer;">
                         <!-- Display first letter of logged in user -->

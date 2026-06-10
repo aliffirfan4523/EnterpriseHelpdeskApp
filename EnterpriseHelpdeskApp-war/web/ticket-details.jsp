@@ -30,15 +30,8 @@
         <!-- Topbar -->
         <header class="topbar">
             <div class="topbar-title">IT Helpdesk</div>
-            
-            <div class="search-bar">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search tickets, articles...">
-            </div>
 
             <div class="topbar-actions">
-                <i class="far fa-bell"></i>
-                <i class="far fa-question-circle"></i>
                 <div class="user-menu-container" style="position: relative;">
                     <div class="avatar" onclick="toggleUserMenu()" style="cursor: pointer;">
                         <c:choose>
@@ -62,7 +55,8 @@
                 <div class="ticket-info-panel card">
                     <div class="panel-header">
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            <a href="javascript:history.back()" style="color: var(--text-muted); text-decoration: none; font-size: 16px;"><i class="fas fa-arrow-left"></i></a>
+                            <c:set var="dashLink" value="${sessionScope.role == 'Admin' ? '/AdminDashboard' : '/EmployeeDashboard'}" />
+                            <a href="${pageContext.request.contextPath}${dashLink}" style="color: var(--text-muted); text-decoration: none; font-size: 16px;"><i class="fas fa-arrow-left"></i></a>
                             <span class="ticket-id">INC-${ticket.id}</span>
                         </div>
                         <c:set var="pri" value="${fn:toLowerCase(ticket.priority.levelName)}" />
@@ -203,10 +197,9 @@
                                 <textarea name="commentText" placeholder="Type a reply..." required></textarea>
                                 <div class="reply-actions">
                                     <div class="action-icons">
-                                        <i class="fas fa-paperclip"></i>
-                                        <i class="far fa-list-alt"></i>
+
                                     </div>
-                                    <button type="submit" class="btn-reply">Reply <i class="fas fa-paper-plane" style="margin-left: 4px;"></i></button>
+                                    <button type="submit" class="btn-reply">Send <i class="fas fa-paper-plane" style="margin-left: 4px;"></i></button>
                                 </div>
                             </div>
                         </form>
@@ -216,7 +209,8 @@
             <c:if test="${empty ticket}">
                 <div class="card" style="padding: 40px; text-align: center;">
                     <h2>Ticket not found</h2>
-                    <a href="javascript:history.back()" style="display: inline-block; margin-top: 20px; color: var(--primary-dark);">Go Back</a>
+                    <c:set var="dashLink" value="${sessionScope.role == 'Admin' ? '/AdminDashboard' : '/EmployeeDashboard'}" />
+                    <a href="${pageContext.request.contextPath}${dashLink}" style="display: inline-block; margin-top: 20px; color: var(--primary-dark);">Go Back to Dashboard</a>
                 </div>
             </c:if>
         </div>

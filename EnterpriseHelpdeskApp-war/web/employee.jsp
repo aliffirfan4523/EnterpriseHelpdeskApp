@@ -36,15 +36,6 @@
             </div>
 
             <div class="topbar-actions">
-
-                <div class="topbar-icon-btn">
-                    🔔
-                </div>
-
-                <div class="topbar-icon-btn">
-                    ?
-                </div>
-
                 <div class="user-menu-container" style="position: relative;">
                     <div class="avatar" onclick="toggleUserMenu()">
                         <%
