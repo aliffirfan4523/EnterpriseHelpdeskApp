@@ -69,4 +69,8 @@ public class UserManagerBean {
     public Department findDepartmentById(int id) {
         return em.find(Department.class, id);
     }
+
+    public User findUserById(int id) {
+        return em.find(User.class, id);
+    }
 }

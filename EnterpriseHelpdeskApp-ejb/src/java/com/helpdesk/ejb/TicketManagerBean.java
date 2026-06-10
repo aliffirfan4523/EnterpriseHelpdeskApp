@@ -42,7 +42,12 @@ public class TicketManagerBean {
     }
     
     public void createTicket(Ticket ticket) {
-    em.persist(ticket);
+        em.persist(ticket);
+        em.flush(); // Force the insert to the database
+        em.refresh(ticket); // Reload the entity to fetch the auto-generated date_created
+    }
 
+    public Ticket findTicketById(int id) {
+        return em.find(Ticket.class, id);
     }
 }

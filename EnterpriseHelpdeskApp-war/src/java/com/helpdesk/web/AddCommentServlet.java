@@ -1,92 +1,78 @@
 package com.helpdesk.web;
 
+import com.helpdesk.domain.core.Ticket;
+import com.helpdesk.domain.core.User;
+import com.helpdesk.domain.meta.Comment;
+import com.helpdesk.ejb.DiscussionManagerBean;
+import com.helpdesk.ejb.TicketManagerBean;
+import com.helpdesk.ejb.UserManagerBean;
+
 import java.io.IOException;
+import javax.ejb.EJB;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
+@WebServlet(name = "AddCommentServlet", urlPatterns = {"/AddComment"})
 public class AddCommentServlet extends HttpServlet {
 
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
+    @EJB
+    private DiscussionManagerBean discussionManager;
 
-        String userPath = request.getServletPath();
+    @EJB
+    private TicketManagerBean ticketManager;
 
-        // if category page is requested
-        if (userPath.equals("/category")) {
-            // TODO: Implement category request
+    @EJB
+    private UserManagerBean userManager;
 
-        // if cart page is requested
-        } else if (userPath.equals("/viewCart")) {
-            // TODO: Implement cart page request
-
-            userPath = "/cart";
-
-        // if checkout page is requested
-        } else if (userPath.equals("/checkout")) {
-            // TODO: Implement checkout page request
-
-        // if user switches language
-        } else if (userPath.equals("/chooseLanguage")) {
-            // TODO: Implement language request
-
-        }
-
-        // use RequestDispatcher to forward request internally
-        String url = "/WEB-INF/view" + userPath + ".jsp";
-
-        try {
-            request.getRequestDispatcher(url).forward(request, response);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
+            throws ServletException, IOException {
 
-        String userPath = request.getServletPath();
-
-        // if addToCart action is called
-        if (userPath.equals("/addToCart")) {
-            // TODO: Implement add product to cart action
-
-        // if updateCart action is called
-        } else if (userPath.equals("/updateCart")) {
-            // TODO: Implement update cart action
-
-        // if purchase action is called
-        } else if (userPath.equals("/purchase")) {
-            // TODO: Implement purchase action
-
-            userPath = "/confirmation";
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            response.sendRedirect(request.getContextPath() + "/index.jsp");
+            return;
         }
 
-        // use RequestDispatcher to forward request internally
-        String url = "/WEB-INF/view" + userPath + ".jsp";
+        Integer userId = (Integer) session.getAttribute("userId");
+        String ticketIdStr = request.getParameter("ticketId");
+        String message = request.getParameter("commentText");
 
-        try {
-            request.getRequestDispatcher(url).forward(request, response);
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        if (ticketIdStr != null && message != null && !message.trim().isEmpty()) {
+            try {
+                int ticketId = Integer.parseInt(ticketIdStr);
+                User user = userManager.findUserById(userId);
+                Ticket ticket = ticketManager.findTicketById(ticketId);
+
+                if (user != null && ticket != null) {
+                    Comment comment = new Comment();
+                    comment.setUser(user);
+                    comment.setTicket(ticket);
+                    comment.setMessage(message);
+
+                    discussionManager.addComment(comment);
+                }
+            } catch (NumberFormatException e) {
+                // Invalid ticket ID format
+                e.printStackTrace();
+            }
+        }
+
+        // Redirect back to the previous page or dashboard based on role
+        String referer = request.getHeader("Referer");
+        if (referer != null) {
+            response.sendRedirect(referer);
+        } else {
+            String role = (String) session.getAttribute("role");
+            if ("Admin".equals(role)) {
+                response.sendRedirect(request.getContextPath() + "/AdminDashboard");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/EmployeeDashboard");
+            }
         }
     }
-
 }
