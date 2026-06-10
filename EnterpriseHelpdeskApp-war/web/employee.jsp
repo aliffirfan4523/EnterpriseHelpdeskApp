@@ -23,31 +23,7 @@
 
 <body>
 
-    <!-- SIDEBAR -->
-    <div class="sidebar">
 
-        <div class="brand">
-            <h2>Service Desk</h2>
-            <p>Enterprise IT</p>
-        </div>
-
-        <ul class="nav-menu">
-            <li>
-                <a href="#" class="active">Dashboard</a>
-            </li>
-
-            <li>
-                <a href="#">Tickets</a>
-            </li>
-        </ul>
-
-        <%--<div class="sidebar-footer">
-            <button class="create-ticket-btn">
-                + Create Ticket
-            </button>
-        </div>--%>
-
-    </div>
 
     <!-- MAIN CONTENT -->
     <div class="main-content">
@@ -165,17 +141,35 @@
                 <!-- RECENT TICKETS -->
                 <div class="card">
 
-                    <div class="card-header">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
 
                         <h2>My Recent Tickets</h2>
 
-                        <a href="#" class="view-all-link">
-                            View All →
-                        </a>
+                        <div class="card-filters" style="display: flex; gap: 12px; align-items: center;">
+                            <select id="statusFilter" class="filter-btn" onchange="filterTickets()" style="padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px;">
+                                <option value="all">Status: All</option>
+                                <option value="open">Status: Open</option>
+                                <option value="in progress">Status: In Progress</option>
+                                <option value="closed">Status: Closed</option>
+                            </select>
+                            <select id="priorityFilter" class="filter-btn" onchange="filterTickets()" style="padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px;">
+                                <option value="all">Priority: All</option>
+                                <option value="low">Priority: Low</option>
+                                <option value="medium">Priority: Medium</option>
+                                <option value="high">Priority: High</option>
+                                <option value="critical">Priority: Critical</option>
+                            </select>
+                            
+                            <a href="#" class="view-all-link" id="viewAllBtn" onclick="toggleViewAll(event)" style="margin-left: 12px; font-size: 14px; color: #4338ca; font-weight: 600; text-decoration: none;">
+                                View All &rarr;
+                            </a>
+                        </div>
 
                     </div>
 
-                    <jsp:include page="tickets-list.jsp" />
+                    <div class="table-responsive">
+                        <jsp:include page="tickets-list.jsp" />
+                    </div>
 
                 </div>
 
@@ -201,6 +195,54 @@
                 }
             }
         }
+
+        let isViewAll = false;
+
+        function toggleViewAll(e) {
+            e.preventDefault();
+            isViewAll = !isViewAll;
+            let btn = document.getElementById('viewAllBtn');
+            btn.innerHTML = isViewAll ? "Show Less &larr;" : "View All &rarr;";
+            filterTickets();
+        }
+
+        function filterTickets() {
+            let statusSelect = document.getElementById("statusFilter").value.toLowerCase();
+            let prioritySelect = document.getElementById("priorityFilter").value.toLowerCase();
+            
+            let tbody = document.getElementById("ticketTableBody");
+            if (!tbody) return;
+            let tr = tbody.getElementsByTagName("tr");
+
+            let visibleCount = 0;
+
+            for (let i = 0; i < tr.length; i++) {
+                if (tr[i].getElementsByTagName("td").length === 1) continue;
+                
+                let priorityText = tr[i].getElementsByTagName("td")[2].innerText.toLowerCase();
+                let statusText = tr[i].getElementsByTagName("td")[3].innerText.toLowerCase();
+                
+                let matchStatus = statusSelect === "all" || statusText.indexOf(statusSelect) > -1;
+                let matchPriority = prioritySelect === "all" || priorityText.indexOf(prioritySelect) > -1;
+                
+                if (matchStatus && matchPriority) {
+                    // Apply 'View All' limit (show max 5 if not View All)
+                    if (!isViewAll && visibleCount >= 5) {
+                        tr[i].style.display = "none";
+                    } else {
+                        tr[i].style.display = "";
+                        visibleCount++;
+                    }
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+
+        // Run initially to apply the 5 item limit
+        window.onload = function() {
+            filterTickets();
+        };
     </script>
 </body>
 </html>

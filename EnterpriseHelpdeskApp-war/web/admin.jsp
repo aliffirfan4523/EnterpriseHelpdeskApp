@@ -18,23 +18,7 @@
 </head>
 <body>
 
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="brand">
-            <div class="brand-icon">SD</div>
-            <div class="brand-text">Service Desk</div>
-        </div>
-        <div class="sub-brand">Enterprise IT</div>
 
-        <button class="btn-create">
-            <i class="fas fa-plus"></i> Create Ticket
-        </button>
-
-        <ul class="nav-menu">
-            <li><a href="#" class="nav-item active"><i class="fas fa-border-all"></i> Dashboard</a></li>
-            <li><a href="#" class="nav-item"><i class="fas fa-ticket-alt"></i> Tickets</a></li>
-        </ul>
-    </aside>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -75,8 +59,19 @@
                 <div class="card-header">
                     <h2 class="card-title">Active Tickets</h2>
                     <div class="card-filters">
-                        <button class="filter-btn">Status: All Active <i class="fas fa-chevron-down"></i></button>
-                        <button class="filter-btn">Priority: All <i class="fas fa-chevron-down"></i></button>
+                        <select id="statusFilter" class="filter-btn" onchange="filterTickets()" style="padding-right: 20px;">
+                            <option value="all">Status: All</option>
+                            <option value="open">Status: Open</option>
+                            <option value="in progress">Status: In Progress</option>
+                            <option value="closed">Status: Closed</option>
+                        </select>
+                        <select id="priorityFilter" class="filter-btn" onchange="filterTickets()" style="padding-right: 20px;">
+                            <option value="all">Priority: All</option>
+                            <option value="low">Priority: Low</option>
+                            <option value="medium">Priority: Medium</option>
+                            <option value="high">Priority: High</option>
+                            <option value="critical">Priority: Critical</option>
+                        </select>
                     </div>
                 </div>
 
@@ -124,19 +119,26 @@
 
         // Search Filter Function
         function filterTickets() {
-            let input = document.getElementById("ticketSearch").value.toLowerCase();
+            let searchInput = document.getElementById("ticketSearch") ? document.getElementById("ticketSearch").value.toLowerCase() : "";
+            let statusSelect = document.getElementById("statusFilter") ? document.getElementById("statusFilter").value.toLowerCase() : "all";
+            let prioritySelect = document.getElementById("priorityFilter") ? document.getElementById("priorityFilter").value.toLowerCase() : "all";
+            
             let tbody = document.getElementById("ticketTableBody");
+            if (!tbody) return;
             let tr = tbody.getElementsByTagName("tr");
 
             for (let i = 0; i < tr.length; i++) {
-                // Skip the "No active tickets found" row if present
                 if (tr[i].getElementsByTagName("td").length === 1) continue;
                 
-                // Get all text content from the row
                 let textContent = tr[i].textContent || tr[i].innerText;
+                let priorityText = tr[i].getElementsByTagName("td")[2].innerText.toLowerCase();
+                let statusText = tr[i].getElementsByTagName("td")[3].innerText.toLowerCase();
                 
-                // Toggle display based on match
-                if (textContent.toLowerCase().indexOf(input) > -1) {
+                let matchSearch = searchInput === "" || textContent.toLowerCase().indexOf(searchInput) > -1;
+                let matchStatus = statusSelect === "all" || statusText.indexOf(statusSelect) > -1;
+                let matchPriority = prioritySelect === "all" || priorityText.indexOf(prioritySelect) > -1;
+                
+                if (matchSearch && matchStatus && matchPriority) {
                     tr[i].style.display = "";
                 } else {
                     tr[i].style.display = "none";

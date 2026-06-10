@@ -17,6 +17,9 @@ public class ViewTicketServlet extends HttpServlet {
     @EJB
     private TicketManagerBean ticketManagerBean;
 
+    @EJB
+    private com.helpdesk.ejb.DiscussionManagerBean discussionManager;
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -35,6 +38,7 @@ public class ViewTicketServlet extends HttpServlet {
                 
                 if (ticket != null) {
                     request.setAttribute("ticket", ticket);
+                    request.setAttribute("allTags", discussionManager.getAllTags());
                     request.getRequestDispatcher("/ticket-details.jsp").forward(request, response);
                     return;
                 }

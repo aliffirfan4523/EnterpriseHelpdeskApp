@@ -11,6 +11,7 @@
         <tr>
             <th>Ticket ID</th>
             <th>Title</th>
+            <th>Priority</th>
             <th>Status</th>
             <th>Date Submitted</th>
             <th>Action</th>
@@ -21,6 +22,7 @@
         <tr>
             <td class="ticket-id">#INC-<%= t.getId() %></td>
             <td class="ticket-title"><%= t.getTitle() %></td>
+            <td class="ticket-priority"><%= t.getPriority() != null ? t.getPriority().getLevelName() : "None" %></td>
             <td>
                 <% if ("Open".equalsIgnoreCase(t.getStatus())) { %>
                     <span class="badge badge-open">OPEN</span>

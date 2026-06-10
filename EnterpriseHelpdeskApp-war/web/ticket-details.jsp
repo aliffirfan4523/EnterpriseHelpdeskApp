@@ -23,19 +23,7 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/style/ticket-details.css">
 </head>
 <body>
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="brand">
-            <div class="brand-icon">SD</div>
-            <div class="brand-text">Service Desk</div>
-        </div>
-        <div class="sub-brand">Enterprise IT</div>
 
-        <ul class="nav-menu" style="margin-top: 32px;">
-            <li><a href="${pageContext.request.contextPath}/AdminDashboard" class="nav-item"><i class="fas fa-border-all"></i> Dashboard</a></li>
-            <li><a href="#" class="nav-item active"><i class="fas fa-ticket-alt"></i> Tickets</a></li>
-        </ul>
-    </aside>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -73,7 +61,10 @@
                 <!-- Left Panel -->
                 <div class="ticket-info-panel card">
                     <div class="panel-header">
-                        <span class="ticket-id">INC-${ticket.id}</span>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <a href="javascript:history.back()" style="color: var(--text-muted); text-decoration: none; font-size: 16px;"><i class="fas fa-arrow-left"></i></a>
+                            <span class="ticket-id">INC-${ticket.id}</span>
+                        </div>
                         <c:set var="pri" value="${fn:toLowerCase(ticket.priority.levelName)}" />
                         <span class="badge ${pri == 'critical' || pri == 'high' ? 'high' : 'medium'}">${ticket.priority.levelName} Priority</span>
                     </div>
@@ -94,14 +85,31 @@
                             <div class="meta-value"><fmt:formatDate value="${ticket.dateCreated}" pattern="M/d/yyyy"/></div>
                         </div>
                         <div class="meta-item">
-                            <div class="meta-label">Assignee</div>
-                            <div class="meta-value">David Chen</div>
+                            <div class="meta-label">Status</div>
+                            <div class="meta-value">
+                                <c:choose>
+                                    <c:when test="${sessionScope.role == 'Admin'}">
+                                        <form action="${pageContext.request.contextPath}/UpdateTicket" method="POST" style="display:inline;">
+                                            <input type="hidden" name="ticketId" value="${ticket.id}">
+                                            <input type="hidden" name="action" value="updateStatus">
+                                            <select name="status" onchange="this.form.submit()" style="padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; font-weight: 500;">
+                                                <option value="Open" ${fn:toLowerCase(ticket.status) == 'open' ? 'selected' : ''}>Open</option>
+                                                <option value="In Progress" ${fn:toLowerCase(ticket.status) == 'in progress' ? 'selected' : ''}>In Progress</option>
+                                                <option value="Closed" ${fn:toLowerCase(ticket.status) == 'closed' ? 'selected' : ''}>Closed</option>
+                                            </select>
+                                        </form>
+                                    </c:when>
+                                    <c:otherwise>
+                                        ${ticket.status}
+                                    </c:otherwise>
+                                </c:choose>
+                            </div>
                         </div>
                     </div>
                     
                     <div class="tags-section">
                         <div class="meta-label">Tags</div>
-                        <div class="tags-list">
+                        <div class="tags-list" style="align-items: center;">
                             <c:choose>
                                 <c:when test="${not empty ticket.tags}">
                                     <c:forEach var="tag" items="${ticket.tags}">
@@ -112,6 +120,19 @@
                                     <span class="tag-badge">None</span>
                                 </c:otherwise>
                             </c:choose>
+                            
+                            <c:if test="${sessionScope.role == 'Admin'}">
+                                <form action="${pageContext.request.contextPath}/UpdateTicket" method="POST" style="display: inline-block; margin-left: 4px;">
+                                    <input type="hidden" name="ticketId" value="${ticket.id}">
+                                    <input type="hidden" name="action" value="addTag">
+                                    <select name="tagId" onchange="this.form.submit()" style="padding: 4px; border-radius: 4px; border: 1px dashed #ccc; font-size: 12px; background: transparent; cursor: pointer; color: var(--text-muted);">
+                                        <option value="" disabled selected>+ Add Tag</option>
+                                        <c:forEach var="t" items="${allTags}">
+                                            <option value="${t.id}">${t.name}</option>
+                                        </c:forEach>
+                                    </select>
+                                </form>
+                            </c:if>
                         </div>
                     </div>
                     
