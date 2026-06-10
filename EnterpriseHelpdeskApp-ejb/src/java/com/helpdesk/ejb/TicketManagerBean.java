@@ -48,6 +48,16 @@ public class TicketManagerBean {
     }
 
     public Ticket findTicketById(int id) {
-        return em.find(Ticket.class, id);
+        Ticket ticket = em.find(Ticket.class, id);
+        if (ticket != null) {
+            em.refresh(ticket); // Refresh from database to ensure new comments are loaded
+            if (ticket.getComments() != null) {
+                ticket.getComments().size(); // Force initialization
+            }
+            if (ticket.getTags() != null) {
+                ticket.getTags().size(); // Force initialization
+            }
+        }
+        return ticket;
     }
 }
