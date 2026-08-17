@@ -37,6 +37,17 @@ public class Comment implements Serializable {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(name = "is_internal")
+    private Boolean isInternal = false;
+
+    public Boolean getIsInternal() {
+        return isInternal != null ? isInternal : false;
+    }
+
+    public void setIsInternal(Boolean isInternal) {
+        this.isInternal = isInternal;
+    }
+
     public int getId() {
         return id;
     }
@@ -76,6 +87,4 @@ public class Comment implements Serializable {
     public void setUser(User user) {
         this.user = user;
     }
-
-     
 }

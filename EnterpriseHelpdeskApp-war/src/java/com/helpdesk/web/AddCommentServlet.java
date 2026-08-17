@@ -52,7 +52,12 @@ public class AddCommentServlet extends HttpServlet {
                     Comment comment = new Comment();
                     comment.setUser(user);
                     comment.setTicket(ticket);
-                    comment.setMessage(message);
+                    comment.setMessage(message.trim());
+
+                    String role = (String) session.getAttribute("role");
+                    String isInternalParam = request.getParameter("isInternal");
+                    boolean isInternal = "Admin".equals(role) && ("true".equalsIgnoreCase(isInternalParam) || "on".equalsIgnoreCase(isInternalParam) || "1".equals(isInternalParam));
+                    comment.setIsInternal(isInternal);
 
                     discussionManager.addComment(comment);
                 }
@@ -61,6 +66,7 @@ public class AddCommentServlet extends HttpServlet {
                 e.printStackTrace();
             }
         }
+
 
         // Redirect back to the previous page or dashboard based on role
         String referer = request.getHeader("Referer");

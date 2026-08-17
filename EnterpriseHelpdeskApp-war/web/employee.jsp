@@ -1,239 +1,302 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@page import="java.util.List"%>
-<%@page import="java.util.ArrayList"%>
-<%@page import="com.helpdesk.domain.core.Ticket"%>
-
-<%
-    List<Ticket> tickets = (List<Ticket>) request.getAttribute("tickets");
-
-    if (tickets == null) {
-        tickets = new ArrayList<Ticket>();
-    }
-%>
-
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Employee Dashboard</title>
-
-    <link rel="stylesheet"
-          href="${pageContext.request.contextPath}/style/employee.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Service Portal - Enterprise Helpdesk</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/style/employee.css?v=2.0">
 </head>
+<body class="employee-body">
 
-<body>
-
-
-
-    <!-- MAIN CONTENT -->
-    <div class="main-content">
-
-        <!-- TOPBAR -->
-        <div class="topbar">
-
-            <div class="topbar-title">
-                IT Helpdesk
+    <!-- Sticky Navbar -->
+    <header class="portal-navbar">
+        <a href="${pageContext.request.contextPath}/EmployeeDashboard" class="portal-brand">
+            <div class="portal-logo-badge">
+                <i class="fas fa-headset"></i>
             </div>
+            <div class="portal-title">Enterprise Helpdesk</div>
+        </a>
 
-            <div class="topbar-actions">
-                <div class="user-menu-container" style="position: relative;">
-                    <div class="avatar" onclick="toggleUserMenu()">
-                        <%
-                            String userName = (String) session.getAttribute("name");
-                            String initial = (userName != null && !userName.isEmpty()) ? userName.substring(0, 1).toUpperCase() : "E";
-                        %>
-                        <%= initial %>
+        <div class="portal-nav-actions">
+            <a href="${pageContext.request.contextPath}/KnowledgeBase" class="btn-header-action btn-outline" style="padding: 6px 14px; font-size: 12px;">
+                <i class="fas fa-book-open"></i> Knowledge Base
+            </a>
+            <a href="${pageContext.request.contextPath}/ExportTickets" class="btn-header-action btn-outline" style="padding: 6px 14px; font-size: 12px;">
+                <i class="fas fa-download"></i> My Tickets (CSV)
+            </a>
+            
+            <div class="user-menu-container">
+                <div class="user-profile-btn" onclick="toggleEmployeeMenu()">
+                    <div class="user-avatar-circle">
+                        <c:choose>
+                            <c:when test="${not empty sessionScope.name}">
+                                ${fn:toUpperCase(fn:substring(sessionScope.name, 0, 1))}
+                            </c:when>
+                            <c:otherwise>E</c:otherwise>
+                        </c:choose>
                     </div>
-                    <div class="user-dropdown" id="employeeUserDropdown">
-                        <a href="Logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
-                    </div>
+                    <span class="user-name-text">${not empty sessionScope.name ? sessionScope.name : 'Employee'}</span>
+                    <i class="fas fa-chevron-down" style="font-size: 10px; color: var(--text-muted);"></i>
                 </div>
 
+                <div class="user-dropdown" id="employeeUserDropdown">
+                    <div style="padding: 10px 14px; border-bottom: 1px solid var(--border-color); font-size: 12px; color: var(--text-muted);">
+                        Signed in as <strong>${sessionScope.email}</strong>
+                    </div>
+                    <a href="${pageContext.request.contextPath}/Logout" class="user-dropdown-item danger">
+                        <i class="fas fa-sign-out-alt"></i> Sign Out
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Banner -->
+    <section class="portal-hero">
+        <div class="hero-inner">
+            <div class="hero-tag">
+                <i class="fas fa-sparkles"></i> 24/7 IT Support Service
+            </div>
+            <h1 class="hero-title">
+                Welcome back, ${not empty sessionScope.name ? sessionScope.name : 'Colleague'}.
+            </h1>
+            <p class="hero-subtitle">
+                How can the IT Helpdesk team support your workflow today?
+            </p>
+            <div class="hero-actions-row">
+                <a href="#newRequestCard" class="btn-hero-action btn-primary-hero">
+                    <i class="fas fa-plus"></i> Submit New Request
+                </a>
+                <a href="#myRequestsSection" class="btn-hero-action btn-secondary-hero">
+                    <i class="fas fa-list-check"></i> Track My Incidents
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Container -->
+    <main class="portal-container">
+
+        <!-- Toast Notifications -->
+        <c:if test="${param.created == 'true'}">
+            <div style="background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; padding:14px 20px; border-radius:12px; font-size:14px; font-weight:600; display:flex; align-items:center; gap:12px; box-shadow: var(--shadow-sm);">
+                <i class="fas fa-check-circle" style="font-size: 18px;"></i> 
+                <span>Your request has been submitted successfully! An IT specialist has been notified.</span>
+            </div>
+        </c:if>
+
+        <!-- KPI Metrics Grid -->
+        <div class="portal-stats-grid">
+            <div class="portal-stat-card">
+                <div class="stat-content">
+                    <div class="stat-label">Total Requests</div>
+                    <div class="stat-number">${not empty userStats ? userStats.total : fn:length(tickets)}</div>
+                </div>
+                <div class="stat-icon blue"><i class="fas fa-ticket-alt"></i></div>
             </div>
 
+            <div class="portal-stat-card">
+                <div class="stat-content">
+                    <div class="stat-label">Under Review / Open</div>
+                    <div class="stat-number">${not empty userStats ? userStats.open : 0}</div>
+                </div>
+                <div class="stat-icon emerald"><i class="fas fa-hourglass-start"></i></div>
+            </div>
+
+            <div class="portal-stat-card">
+                <div class="stat-content">
+                    <div class="stat-label">In Progress</div>
+                    <div class="stat-number">${not empty userStats ? userStats.inProgress : 0}</div>
+                </div>
+                <div class="stat-icon amber"><i class="fas fa-wrench"></i></div>
+            </div>
+
+            <div class="portal-stat-card">
+                <div class="stat-content">
+                    <div class="stat-label">Resolved</div>
+                    <div class="stat-number">${not empty userStats ? userStats.resolved : 0}</div>
+                </div>
+                <div class="stat-icon slate"><i class="fas fa-check-double"></i></div>
+            </div>
         </div>
 
-        <!-- CONTENT -->
-        <div class="content-area">
-
-            <div class="header">
-
-                <h1>Good Morning.</h1>
-
-                <p>
-                    Here is an overview of your IT requests.
-                </p>
-
-            </div>
-
-            <div class="dashboard-grid">
-
-                <!-- NEW TICKET -->
-                <div class="card">
-
-                    <h2>New Ticket</h2>
-
-                    <form action="SubmitTicket" method="post">
-
-                        <div class="form-group">
-
-                            <label>Issue Title</label>
-
-                            <input
-                                type="text"
-                                name="title"
-                                placeholder="Briefly describe the issue..."
-                                required>
-
-                        </div>
-
-                        <div class="form-group">
-
-                            <label>Priority Level</label>
-
-                            <select name="priorityId">
-
-                                <option value="1">
-                                    Low - General Inquiry
-                                </option>
-
-                                <option value="2">
-                                    Medium - Normal Issue
-                                </option>
-
-                                <option value="3">
-                                    High - Critical Issue
-                                </option>
-
-                            </select>
-
-                        </div>
-
-                        <div class="form-group">
-
-                            <label>Description</label>
-
-                            <textarea
-                                name="description"
-                                rows="7"
-                                placeholder="Provide detailed steps to reproduce the issue..."
-                                required></textarea>
-
-                        </div>
-
-                        <button type="submit" class="submit-btn">
-                            Submit Request
-                        </button>
-
-                    </form>
-
-                </div>
-
-                <!-- RECENT TICKETS -->
-                <div class="card">
-
-                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-
-                        <h2>My Recent Tickets</h2>
-
-                        <div class="card-filters" style="display: flex; gap: 12px; align-items: center;">
-                            <select id="statusFilter" class="filter-btn" onchange="filterTickets()" style="padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px;">
-                                <option value="all">Status: All</option>
-                                <option value="open">Status: Open</option>
-                                <option value="in progress">Status: In Progress</option>
-                                <option value="closed">Status: Closed</option>
-                            </select>
-                            <select id="priorityFilter" class="filter-btn" onchange="filterTickets()" style="padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px;">
-                                <option value="all">Priority: All</option>
-                                <option value="low">Priority: Low</option>
-                                <option value="medium">Priority: Medium</option>
-                                <option value="high">Priority: High</option>
-                                <option value="critical">Priority: Critical</option>
-                            </select>
+        <!-- 2-Column Portal Layout -->
+        <div class="portal-layout-grid">
+            
+            <!-- Left Side: New Request Form & FAQ -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+                
+                <!-- Submit Request Card -->
+                <div class="service-card" id="newRequestCard">
+                    <div class="service-card-header">
+                        <h2><i class="fas fa-paper-plane" style="color:var(--primary); margin-right:8px;"></i> Raise a Request</h2>
+                        <p>Need hardware, software, or account assistance? Let us know.</p>
+                    </div>
+                    <div class="service-card-body">
+                        <form action="${pageContext.request.contextPath}/SubmitTicket" method="POST">
                             
-                            <a href="#" class="view-all-link" id="viewAllBtn" onclick="toggleViewAll(event)" style="margin-left: 12px; font-size: 14px; color: #4338ca; font-weight: 600; text-decoration: none;">
-                                View All &rarr;
-                            </a>
+                            <div class="form-field">
+                                <label class="field-label" for="reqTitle">Issue Summary</label>
+                                <input type="text" id="reqTitle" name="title" class="field-input" placeholder="e.g. Cannot access VPN client on macOS" required>
+                            </div>
+
+                            <div class="form-field">
+                                <label class="field-label" for="reqPriority">Urgency / Priority</label>
+                                <select id="reqPriority" name="priorityId" class="field-select" required>
+                                    <c:forEach var="p" items="${priorities}">
+                                        <option value="${p.id}" ${p.id == 2 ? 'selected' : ''}>
+                                            ${p.levelName} (${p.resolveHours}h target resolution)
+                                        </option>
+                                    </c:forEach>
+                                </select>
+                                <div class="field-hint">Select Critical only if work is completely blocked.</div>
+                            </div>
+
+                            <div class="form-field">
+                                <label class="field-label" for="reqDesc">Detailed Description</label>
+                                <textarea id="reqDesc" name="description" class="field-textarea" placeholder="Please describe the steps to reproduce the issue or specific error messages..." required></textarea>
+                            </div>
+
+                            <button type="submit" class="btn-submit-request">
+                                <span>Submit IT Request</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Self-Service Knowledge Base Accordion -->
+                <div class="faq-card">
+                    <div class="faq-title">
+                        <i class="fas fa-lightbulb" style="color: #f59e0b;"></i> Quick Solutions & FAQs
+                    </div>
+                    
+                    <div class="faq-item active" onclick="toggleFaq(this)">
+                        <div class="faq-question">
+                            <span>How do I reset my company password?</span>
+                            <i class="fas fa-chevron-down"></i>
                         </div>
-
+                        <div class="faq-answer">
+                            Visit the self-service authentication portal or contact the helpdesk directly if locked out.
+                        </div>
                     </div>
 
-                    <div class="table-responsive">
-                        <jsp:include page="tickets-list.jsp" />
+                    <div class="faq-item" onclick="toggleFaq(this)">
+                        <div class="faq-question">
+                            <span>How do I connect to the corporate VPN?</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Open Cisco AnyConnect or GlobalProtect on your laptop and authenticate using your Single Sign-On (SSO) credentials.
+                        </div>
                     </div>
 
+                    <div class="faq-item" onclick="toggleFaq(this)">
+                        <div class="faq-question">
+                            <span>What are standard SLA resolution times?</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Critical incidents are addressed within 4 hours. High priority within 8 hours. Standard requests within 24-48 hours.
+                        </div>
+                    </div>
                 </div>
 
             </div>
 
+            <!-- Right Side: My Requests List -->
+            <div class="data-table-card" id="myRequestsSection">
+                <div class="table-toolbar">
+                    <div class="toolbar-title-group">
+                        <h2 class="toolbar-title">My Recent Requests</h2>
+                        <span class="toolbar-count-badge" id="employeeRowCount">${fn:length(tickets)} requests</span>
+                    </div>
+
+                    <div class="toolbar-filters">
+                        <input type="text" id="employeeSearchInput" class="filter-select" placeholder="Filter requests..." onkeyup="filterEmployeeTable()" style="width: 180px;">
+                        <select id="employeeStatusFilter" class="filter-select" onchange="filterEmployeeTable()">
+                            <option value="all">Status: All</option>
+                            <option value="open">Open</option>
+                            <option value="in progress">In Progress</option>
+                            <option value="closed">Resolved / Closed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <jsp:include page="tickets-list.jsp" />
+                </div>
+
+                <div class="table-footer">
+                    <div>Click any request to view activity or reply to IT staff.</div>
+                    <div style="font-size:12px; color:var(--text-muted);">Auto-refreshed</div>
+                </div>
+            </div>
+
         </div>
 
-    </div>
+    </main>
 
+    <!-- Interactive Script -->
     <script>
-        function toggleUserMenu() {
-            document.getElementById("employeeUserDropdown").classList.toggle("show");
+        function toggleEmployeeMenu() {
+            document.getElementById('employeeUserDropdown').classList.toggle('show');
         }
-        
+
+        function toggleFaq(element) {
+            element.classList.toggle('active');
+        }
+
         window.onclick = function(event) {
-            if (!event.target.matches('.avatar') && !event.target.closest('.avatar')) {
-                var dropdowns = document.getElementsByClassName("user-dropdown");
-                for (var i = 0; i < dropdowns.length; i++) {
-                    var openDropdown = dropdowns[i];
-                    if (openDropdown.classList.contains('show')) {
-                        openDropdown.classList.remove('show');
-                    }
+            if (!event.target.closest('.user-menu-container')) {
+                let dropdown = document.getElementById('employeeUserDropdown');
+                if (dropdown && dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
                 }
             }
-        }
+        };
 
-        let isViewAll = false;
+        function filterEmployeeTable() {
+            let search = document.getElementById('employeeSearchInput').value.toLowerCase().trim();
+            let status = document.getElementById('employeeStatusFilter').value.toLowerCase();
 
-        function toggleViewAll(e) {
-            e.preventDefault();
-            isViewAll = !isViewAll;
-            let btn = document.getElementById('viewAllBtn');
-            btn.innerHTML = isViewAll ? "Show Less &larr;" : "View All &rarr;";
-            filterTickets();
-        }
-
-        function filterTickets() {
-            let statusSelect = document.getElementById("statusFilter").value.toLowerCase();
-            let prioritySelect = document.getElementById("priorityFilter").value.toLowerCase();
-            
-            let tbody = document.getElementById("ticketTableBody");
+            let tbody = document.getElementById('ticketTableBody');
             if (!tbody) return;
-            let tr = tbody.getElementsByTagName("tr");
+            let rows = tbody.getElementsByTagName('tr');
 
             let visibleCount = 0;
 
-            for (let i = 0; i < tr.length; i++) {
-                if (tr[i].getElementsByTagName("td").length === 1) continue;
-                
-                let priorityText = tr[i].getElementsByTagName("td")[2].innerText.toLowerCase();
-                let statusText = tr[i].getElementsByTagName("td")[3].innerText.toLowerCase();
-                
-                let matchStatus = statusSelect === "all" || statusText.indexOf(statusSelect) > -1;
-                let matchPriority = prioritySelect === "all" || priorityText.indexOf(prioritySelect) > -1;
-                
-                if (matchStatus && matchPriority) {
-                    // Apply 'View All' limit (show max 5 if not View All)
-                    if (!isViewAll && visibleCount >= 5) {
-                        tr[i].style.display = "none";
-                    } else {
-                        tr[i].style.display = "";
-                        visibleCount++;
-                    }
+            for (let i = 0; i < rows.length; i++) {
+                let row = rows[i];
+                let rowStatus = (row.getAttribute('data-status') || '').toLowerCase();
+                let rowText = row.innerText.toLowerCase();
+
+                let matchSearch = (search === "" || rowText.indexOf(search) > -1);
+                let matchStatus = (status === "all" || rowStatus.indexOf(status) > -1);
+
+                if (matchSearch && matchStatus) {
+                    row.style.display = "";
+                    visibleCount++;
                 } else {
-                    tr[i].style.display = "none";
+                    row.style.display = "none";
                 }
             }
-        }
 
-        // Run initially to apply the 5 item limit
-        window.onload = function() {
-            filterTickets();
-        };
+            let countBadge = document.getElementById('employeeRowCount');
+            if (countBadge) {
+                countBadge.innerText = visibleCount + ' requests';
+            }
+        }
     </script>
 </body>
 </html>

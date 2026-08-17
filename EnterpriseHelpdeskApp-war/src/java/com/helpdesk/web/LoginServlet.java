@@ -41,14 +41,16 @@ public class LoginServlet extends HttpServlet {
             HttpSession session = request.getSession();
             session.setAttribute("email", loggedInUser.getEmail());
             session.setAttribute("role", loggedInUser.getRole());
-            session.setAttribute("userId", loggedInUser.getId()); // Good practice to store ID
+            session.setAttribute("userId", loggedInUser.getId());
             session.setAttribute("name", loggedInUser.getName());
+            session.setAttribute("userName", loggedInUser.getName());
+            session.setAttribute("department", loggedInUser.getDepartment() != null ? loggedInUser.getDepartment().getName() : "IT Support");
 
             // 3. Redirect based on role
             if ("Admin".equals(loggedInUser.getRole())) {
-                response.sendRedirect("AdminDashboard");
+                response.sendRedirect(request.getContextPath() + "/AdminDashboard");
             } else {
-                response.sendRedirect("EmployeeDashboard");
+                response.sendRedirect(request.getContextPath() + "/EmployeeDashboard");
             }
 
         } else {

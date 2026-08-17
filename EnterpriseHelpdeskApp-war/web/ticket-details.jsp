@@ -3,241 +3,526 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@page import="com.helpdesk.domain.core.Ticket"%>
-<%
-    Ticket ticket = (Ticket) request.getAttribute("ticket");
-%>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Ticket Details - #INC-${ticket.id}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>#INC-${ticket.id} - ${ticket.title} | Enterprise Helpdesk</title>
     <!-- Google Fonts & FontAwesome -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Using admin.css for the sidebar and topbar base styles -->
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/style/admin.css">
-    <!-- Specific styles for the ticket details layout -->
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/style/ticket-details.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/style/ticket-details.css?v=2.0">
 </head>
-<body>
+<body class="workbench-body">
 
+    <!-- Topbar Navigation -->
+    <header class="app-topbar" style="border-bottom: 1px solid var(--border-color); background:#ffffff;">
+        <div class="topbar-left">
+            <c:set var="backUrl" value="${sessionScope.role == 'Admin' ? '/AdminDashboard' : '/EmployeeDashboard'}" />
+            <a href="${pageContext.request.contextPath}${backUrl}" class="btn-header-action btn-outline" style="padding: 6px 12px; font-size: 13px;">
+                <i class="fas fa-arrow-left"></i>
+                <span>Back to Dashboard</span>
+            </a>
+            <div class="ticket-id-breadcrumbs">
+                <span class="ticket-mono-id">#INC-${ticket.id}</span>
+                <span>/</span>
+                <span style="font-weight: 600; color: var(--text-primary); max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${ticket.title}
+                </span>
+            </div>
+        </div>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Topbar -->
-        <header class="topbar">
-            <div class="topbar-title">IT Helpdesk</div>
+        <div class="topbar-right">
+            <c:set var="statusLower" value="${fn:toLowerCase(ticket.status)}" />
+            <c:choose>
+                <c:when test="${statusLower == 'open'}">
+                    <span class="badge badge-status-open"><i class="fas fa-dot-circle"></i> Open</span>
+                </c:when>
+                <c:when test="${statusLower == 'in progress'}">
+                    <span class="badge badge-status-progress"><i class="fas fa-spinner fa-spin"></i> In Progress</span>
+                </c:when>
+                <c:otherwise>
+                    <span class="badge badge-status-closed"><i class="fas fa-check-circle"></i> ${ticket.status}</span>
+                </c:otherwise>
+            </c:choose>
 
-            <div class="topbar-actions">
-                <div class="user-menu-container" style="position: relative;">
-                    <div class="avatar" onclick="toggleUserMenu()" style="cursor: pointer;">
-                        <c:choose>
-                            <c:when test="${not empty sessionScope.name}">
-                                ${fn:substring(sessionScope.name, 0, 1)}
-                            </c:when>
-                            <c:otherwise>U</c:otherwise>
-                        </c:choose>
-                    </div>
-                    <div class="user-dropdown" id="userDropdown">
-                        <a href="${pageContext.request.contextPath}/Logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="javascript:window.print()" class="btn-header-action btn-outline" title="Print Ticket Summary">
+                <i class="fas fa-print"></i>
+            </a>
+
+            <a href="${pageContext.request.contextPath}/Logout" class="btn-header-action btn-outline" title="Sign Out">
+                <i class="fas fa-sign-out-alt"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- Workbench 2-Pane Split -->
+    <div class="workbench-layout">
+        
+        <!-- Left Main Panel: Discussion & Description -->
+        <main class="workbench-main">
+            <!-- Header -->
+            <div class="workbench-header">
+                <div class="ticket-header-meta">
+                    <h1 class="ticket-main-title">${ticket.title}</h1>
+                    <div style="display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--text-muted);">
+                        <span><i class="far fa-calendar-alt"></i> Created on <fmt:formatDate value="${ticket.dateCreated}" pattern="MMM d, yyyy 'at' h:mm a"/></span>
+                        <span>&bull;</span>
+                        <span><i class="far fa-user"></i> Reported by <strong>${ticket.user.name}</strong></span>
+                        <c:if test="${not empty ticket.user.department}">
+                            <span>(${ticket.user.department.name})</span>
+                        </c:if>
                     </div>
                 </div>
             </div>
-        </header>
 
-        <!-- Content Area -->
-        <div class="content-area ticket-details-layout">
-            <c:if test="${not empty ticket}">
-                <!-- Left Panel -->
-                <div class="ticket-info-panel card">
-                    <div class="panel-header">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <c:set var="dashLink" value="${sessionScope.role == 'Admin' ? '/AdminDashboard' : '/EmployeeDashboard'}" />
-                            <a href="${pageContext.request.contextPath}${dashLink}" style="color: var(--text-muted); text-decoration: none; font-size: 16px;"><i class="fas fa-arrow-left"></i></a>
-                            <span class="ticket-id">INC-${ticket.id}</span>
+            <!-- Scrollable Discussion Stream -->
+            <div class="workbench-stream" id="discussionStream">
+                
+                <!-- Original Description Card -->
+                <div class="description-banner">
+                    <div class="description-header">
+                        <div class="description-title">
+                            <i class="fas fa-align-left" style="color: var(--primary);"></i>
+                            <span>Incident Description</span>
                         </div>
-                        <c:set var="pri" value="${fn:toLowerCase(ticket.priority.levelName)}" />
-                        <span class="badge ${pri == 'critical' || pri == 'high' ? 'high' : 'medium'}">${ticket.priority.levelName} Priority</span>
+                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Original Submission</span>
                     </div>
-                    
-                    <h1 class="ticket-title-large">${ticket.title}</h1>
-                    
-                    <div class="requester-profile">
-                        <div class="avatar large">${fn:substring(ticket.user.name, 0, 1)}</div>
-                        <div class="requester-info">
-                            <div class="requester-name">${ticket.user.name}</div>
-                            <div class="requester-role">${not empty ticket.user.department ? ticket.user.department.name : 'User'}</div>
-                        </div>
+                    <div class="description-body">${ticket.description}</div>
+                </div>
+
+                <!-- Timeline Separator -->
+                <div class="system-event">
+                    <div class="system-event-line"></div>
+                    <div class="system-event-text">
+                        <i class="fas fa-history"></i> Ticket Opened via Portal &bull; <fmt:formatDate value="${ticket.dateCreated}" pattern="h:mm a"/>
                     </div>
-                    
-                    <div class="metadata-grid">
-                        <div class="meta-item">
-                            <div class="meta-label">Ticket Date</div>
-                            <div class="meta-value"><fmt:formatDate value="${ticket.dateCreated}" pattern="M/d/yyyy"/></div>
-                        </div>
-                        <div class="meta-item">
-                            <div class="meta-label">Status</div>
-                            <div class="meta-value">
-                                <c:choose>
-                                    <c:when test="${sessionScope.role == 'Admin'}">
-                                        <form action="${pageContext.request.contextPath}/UpdateTicket" method="POST" style="display:inline;">
-                                            <input type="hidden" name="ticketId" value="${ticket.id}">
-                                            <input type="hidden" name="action" value="updateStatus">
-                                            <select name="status" onchange="this.form.submit()" style="padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; font-weight: 500;">
-                                                <option value="Open" ${fn:toLowerCase(ticket.status) == 'open' ? 'selected' : ''}>Open</option>
-                                                <option value="In Progress" ${fn:toLowerCase(ticket.status) == 'in progress' ? 'selected' : ''}>In Progress</option>
-                                                <option value="Closed" ${fn:toLowerCase(ticket.status) == 'closed' ? 'selected' : ''}>Closed</option>
-                                            </select>
-                                        </form>
-                                    </c:when>
-                                    <c:otherwise>
-                                        ${ticket.status}
-                                    </c:otherwise>
-                                </c:choose>
+                    <div class="system-event-line"></div>
+                </div>
+
+                <!-- Comments & Internal Notes -->
+                <c:forEach var="c" items="${ticket.comments}">
+                    <!-- Only show internal notes to Admins -->
+                    <c:if test="${!c.isInternal || sessionScope.role == 'Admin'}">
+                        <div class="comment-card ${c.isInternal ? 'internal-note' : ''}">
+                            <div class="comment-avatar ${c.user.role == 'Admin' ? 'admin-avatar' : ''}">
+                                ${fn:toUpperCase(fn:substring(c.user.name, 0, 1))}
+                            </div>
+                            
+                            <div class="comment-content-box">
+                                <div class="comment-header">
+                                    <div class="comment-author-group">
+                                        <span class="comment-author-name">${c.user.name}</span>
+                                        <c:choose>
+                                            <c:when test="${c.user.role == 'Admin'}">
+                                                <span class="role-pill it-staff">IT Specialist</span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span class="role-pill requester">Employee</span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                        <c:if test="${c.isInternal}">
+                                            <span class="internal-note-badge">
+                                                <i class="fas fa-lock"></i> Internal Note
+                                            </span>
+                                        </c:if>
+                                    </div>
+                                    <span class="comment-time">
+                                        <fmt:formatDate value="${c.postedAt}" pattern="MMM d, h:mm a"/>
+                                    </span>
+                                </div>
+                                <div class="comment-body">${c.message}</div>
                             </div>
                         </div>
+                    </c:if>
+                </c:forEach>
+
+            </div>
+
+            <!-- Reply Composer -->
+            <div class="reply-composer-wrap">
+                <form action="${pageContext.request.contextPath}/AddComment" method="POST" id="replyForm">
+                    <input type="hidden" name="ticketId" value="${ticket.id}">
+                    <input type="hidden" name="isInternal" id="isInternalInput" value="false">
+
+                    <!-- Admin Tabs (Public Reply vs Internal Note) -->
+                    <c:if test="${sessionScope.role == 'Admin'}">
+                        <div class="reply-type-tabs">
+                            <button type="button" class="reply-tab-btn active" id="tabPublic" onclick="setReplyMode('public')">
+                                <i class="fas fa-comment"></i> Public Customer Reply
+                            </button>
+                            <button type="button" class="reply-tab-btn" id="tabInternal" onclick="setReplyMode('internal')">
+                                <i class="fas fa-lock"></i> Internal Diagnostic Note
+                            </button>
+                        </div>
+                    </c:if>
+
+                    <div class="reply-input-container" id="replyContainer">
+                        <textarea name="commentText" id="commentText" class="reply-textarea" placeholder="Type your response to the requester here..." required></textarea>
+                        
+                        <div class="reply-toolbar">
+                            <div style="font-size: 12px; color: var(--text-muted);" id="replyHelpText">
+                                <i class="fas fa-globe"></i> Visible to employee and IT team
+                            </div>
+                            <button type="submit" class="btn-send-reply" id="btnSubmitReply">
+                                <span>Send Reply</span>
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
                     </div>
+                </form>
+            </div>
+
+        </main>
+
+        <!-- Right Meta Sidebar -->
+        <aside class="workbench-sidebar">
+            
+            <!-- SLA Target Card -->
+            <div class="meta-card">
+                <div class="meta-card-title">
+                    <span>SLA Resolution Target</span>
+                    <i class="fas fa-clock" style="color: var(--primary);"></i>
+                </div>
+                <div>
+                    <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-size: 12px; color: var(--text-muted);">Deadline Status:</span>
+                        <c:choose>
+                            <c:when test="${slaStatus == 'BREACHED'}">
+                                <span class="sla-badge breached"><i class="fas fa-exclamation-triangle"></i> SLA Breached</span>
+                            </c:when>
+                            <c:when test="${slaStatus == 'AT_RISK'}">
+                                <span class="sla-badge at-risk"><i class="fas fa-hourglass-half"></i> At Risk</span>
+                            </c:when>
+                            <c:when test="${slaStatus == 'RESOLVED'}">
+                                <span class="sla-badge resolved"><i class="fas fa-check"></i> Completed</span>
+                            </c:when>
+                            <c:otherwise>
+                                <span class="sla-badge on-track"><i class="fas fa-shield-alt"></i> On Track</span>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+
+                    <div style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">
+                        ${slaRemaining}
+                    </div>
+
+                    <div style="font-size: 12px; color: var(--text-muted);">
+                        Target: <fmt:formatDate value="${slaDeadline}" pattern="MMM d, yyyy h:mm a"/>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ticket Properties Card -->
+            <div class="meta-card">
+                <div class="meta-card-title">
+                    <span>Incident Properties</span>
+                    <i class="fas fa-sliders-h"></i>
+                </div>
+
+                <div class="meta-property-list">
                     
-                    <div class="tags-section">
-                        <div class="meta-label">Tags</div>
-                        <div class="tags-list" style="align-items: center;">
-                            <c:choose>
-                                <c:when test="${not empty ticket.tags}">
-                                    <c:forEach var="tag" items="${ticket.tags}">
-                                        <span class="tag-badge">${tag.name}</span>
-                                    </c:forEach>
-                                </c:when>
-                                <c:otherwise>
-                                    <span class="tag-badge">None</span>
-                                </c:otherwise>
-                            </c:choose>
-                            
-                            <c:if test="${sessionScope.role == 'Admin'}">
-                                <form action="${pageContext.request.contextPath}/UpdateTicket" method="POST" style="display: inline-block; margin-left: 4px;">
+                    <!-- Status -->
+                    <div class="meta-property-row">
+                        <span class="meta-property-label">Incident Status</span>
+                        <c:choose>
+                            <c:when test="${sessionScope.role == 'Admin'}">
+                                <form action="${pageContext.request.contextPath}/UpdateTicket" method="POST">
                                     <input type="hidden" name="ticketId" value="${ticket.id}">
-                                    <input type="hidden" name="action" value="addTag">
-                                    <select name="tagId" onchange="this.form.submit()" style="padding: 4px; border-radius: 4px; border: 1px dashed #ccc; font-size: 12px; background: transparent; cursor: pointer; color: var(--text-muted);">
-                                        <option value="" disabled selected>+ Add Tag</option>
-                                        <c:forEach var="t" items="${allTags}">
-                                            <option value="${t.id}">${t.name}</option>
+                                    <input type="hidden" name="action" value="updateStatus">
+                                    <select name="status" class="meta-select" onchange="this.form.submit()">
+                                        <option value="Open" ${ticket.status == 'Open' ? 'selected' : ''}>Open</option>
+                                        <option value="In Progress" ${ticket.status == 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                        <option value="Resolved" ${ticket.status == 'Resolved' ? 'selected' : ''}>Resolved</option>
+                                        <option value="Closed" ${ticket.status == 'Closed' ? 'selected' : ''}>Closed</option>
+                                    </select>
+                                </form>
+                            </c:when>
+                            <c:otherwise>
+                                <div style="font-size: 14px; font-weight: 600;">${ticket.status}</div>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+
+                    <!-- Priority -->
+                    <div class="meta-property-row">
+                        <span class="meta-property-label">Priority / Urgency</span>
+                        <c:choose>
+                            <c:when test="${sessionScope.role == 'Admin'}">
+                                <form action="${pageContext.request.contextPath}/UpdateTicket" method="POST">
+                                    <input type="hidden" name="ticketId" value="${ticket.id}">
+                                    <input type="hidden" name="action" value="updatePriority">
+                                    <select name="priorityId" class="meta-select" onchange="this.form.submit()">
+                                        <c:forEach var="pri" items="${allPriorities}">
+                                            <option value="${pri.id}" ${ticket.priority.id == pri.id ? 'selected' : ''}>
+                                                ${pri.levelName} (${pri.resolveHours}h SLA)
+                                            </option>
                                         </c:forEach>
                                     </select>
                                 </form>
-                            </c:if>
-                        </div>
+                            </c:when>
+                            <c:otherwise>
+                                <div style="font-size: 14px; font-weight: 600;">${ticket.priority.levelName} (${ticket.priority.resolveHours}h SLA)</div>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
-                    
-                    <div class="description-card">
-                        <div class="meta-label">Original Description</div>
-                        <div class="description-text">
-                            ${fn:replace(ticket.description, '\\n', '<br/>')}
+
+                    <!-- Assignee -->
+                    <div class="meta-property-row">
+                        <span class="meta-property-label">Assigned Technician</span>
+                        <c:choose>
+                            <c:when test="${sessionScope.role == 'Admin'}">
+                                <form action="${pageContext.request.contextPath}/UpdateTicket" method="POST">
+                                    <input type="hidden" name="ticketId" value="${ticket.id}">
+                                    <input type="hidden" name="action" value="assignTicket">
+                                    <select name="adminId" class="meta-select" onchange="this.form.submit()">
+                                        <option value="0">Unassigned</option>
+                                        <c:forEach var="adm" items="${allAdmins}">
+                                            <option value="${adm.id}" ${ticket.assignedTo != null && ticket.assignedTo.id == adm.id ? 'selected' : ''}>
+                                                ${adm.name}
+                                            </option>
+                                        </c:forEach>
+                                    </select>
+                                </form>
+                            </c:when>
+                            <c:otherwise>
+                                <div style="font-size: 14px; font-weight: 600;">
+                                    ${ticket.assignedTo != null ? ticket.assignedTo.name : 'Unassigned (General Queue)'}
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Requester Card -->
+            <div class="meta-card">
+                <div class="meta-card-title">
+                    <span>Requester Details</span>
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="requester-profile-row">
+                    <div class="requester-avatar-lg">
+                        ${fn:toUpperCase(fn:substring(ticket.user.name, 0, 1))}
+                    </div>
+                    <div class="requester-details">
+                        <div class="name">${ticket.user.name}</div>
+                        <div class="email">${ticket.user.email}</div>
+                        <div class="dept">
+                            <i class="fas fa-building" style="margin-right: 4px;"></i>
+                            ${ticket.user.department != null ? ticket.user.department.name : 'General Staff'}
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Right Panel (Activity Thread) -->
-                <div class="activity-thread-panel card">
-                    <div class="thread-header">
-                        <h2><i class="far fa-comments"></i> Activity Thread</h2>
-                        <button class="btn-internal-note">Internal Note</button>
-                    </div>
-                    
-                    <div class="thread-content">
-                        <div class="system-message">
-                            <span>Ticket created via Portal - <fmt:formatDate value="${ticket.dateCreated}" pattern="MMM d, hh:mm a"/></span>
-                        </div>
-                        
-                        <c:forEach var="comment" items="${ticket.comments}">
-                            <c:choose>
-                                <c:when test="${comment.user.id != sessionScope.userId}">
-                                    <!-- Other User's Comment (Left) -->
-                                    <div class="chat-message left">
-                                        <div class="chat-avatar">${fn:substring(comment.user.name, 0, 1)}</div>
-                                        <div class="chat-body">
-                                            <div class="chat-header">
-                                                <span class="chat-name">${comment.user.name}
-                                                    <c:if test="${comment.user.role == 'Admin'}"><span class="role-badge">(IT)</span></c:if>
-                                                </span>
-                                                <span class="chat-time"><fmt:formatDate value="${comment.postedAt}" pattern="hh:mm a"/></span>
-                                            </div>
-                                            <div class="chat-bubble">
-                                                ${fn:replace(comment.message, '\\n', '<br/>')}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </c:when>
-                                <c:otherwise>
-                                    <!-- Current Logged-in User's Comment (Right) -->
-                                    <div class="chat-message right">
-                                        <div class="chat-body">
-                                            <div class="chat-header">
-                                                <span class="chat-time"><fmt:formatDate value="${comment.postedAt}" pattern="hh:mm a"/></span>
-                                                <span class="chat-name">${comment.user.name}
-                                                    <c:if test="${comment.user.role == 'Admin'}"><span class="role-badge">(IT)</span></c:if>
-                                                </span>
-                                            </div>
-                                            <div class="chat-bubble highlight">
-                                                ${fn:replace(comment.message, '\\n', '<br/>')}
-                                            </div>
-                                        </div>
-                                        <div class="chat-avatar agent">${fn:substring(comment.user.name, 0, 1)}</div>
-                                    </div>
-                                </c:otherwise>
-                            </c:choose>
-                        </c:forEach>
-                    </div>
-                    
-                    <div class="thread-footer">
-                        <form action="${pageContext.request.contextPath}/AddComment" method="POST" style="width: 100%;">
+            <!-- Tags Section -->
+            <div class="meta-card">
+                <div class="meta-card-title">
+                    <span>Incident Tags</span>
+                    <i class="fas fa-tags"></i>
+                </div>
+                
+                <div class="tag-chips-container">
+                    <c:choose>
+                        <c:when test="${not empty ticket.tags}">
+                            <c:forEach var="tag" items="${ticket.tags}">
+                                <span class="tag-chip">
+                                    <span>${tag.name}</span>
+                                    <c:if test="${sessionScope.role == 'Admin'}">
+                                        <form action="${pageContext.request.contextPath}/UpdateTicket" method="POST" style="display:inline;">
+                                            <input type="hidden" name="ticketId" value="${ticket.id}">
+                                            <input type="hidden" name="action" value="removeTag">
+                                            <input type="hidden" name="tagId" value="${tag.id}">
+                                            <button type="submit" class="tag-remove-btn" title="Remove Tag">&times;</button>
+                                        </form>
+                                    </c:if>
+                                </span>
+                            </c:forEach>
+                        </c:when>
+                        <c:otherwise>
+                            <span style="font-size: 12px; color: var(--text-muted);">No tags assigned</span>
+                        </c:otherwise>
+                    </c:choose>
+                </div>
+
+                <c:if test="${sessionScope.role == 'Admin'}">
+                    <div style="margin-top: 14px; display: flex; gap: 8px;">
+                        <form action="${pageContext.request.contextPath}/UpdateTicket" method="POST" style="display: flex; gap: 6px; width: 100%;">
                             <input type="hidden" name="ticketId" value="${ticket.id}">
-                            <div class="reply-box">
-                                <textarea name="commentText" placeholder="Type a reply..." required></textarea>
-                                <div class="reply-actions">
-                                    <div class="action-icons">
-
-                                    </div>
-                                    <button type="submit" class="btn-reply">Send <i class="fas fa-paper-plane" style="margin-left: 4px;"></i></button>
-                                </div>
-                            </div>
+                            <input type="hidden" name="action" value="createTag">
+                            <input type="text" name="newTagName" placeholder="+ Add tag..." class="form-control no-icon" style="padding: 6px 10px; font-size: 12px;" required>
+                            <button type="submit" class="btn-header-action btn-outline" style="padding: 6px 10px; font-size: 12px;">Add</button>
                         </form>
                     </div>
-                </div>
-            </c:if>
-            <c:if test="${empty ticket}">
-                <div class="card" style="padding: 40px; text-align: center;">
-                    <h2>Ticket not found</h2>
-                    <c:set var="dashLink" value="${sessionScope.role == 'Admin' ? '/AdminDashboard' : '/EmployeeDashboard'}" />
-                    <a href="${pageContext.request.contextPath}${dashLink}" style="display: inline-block; margin-top: 20px; color: var(--primary-dark);">Go Back to Dashboard</a>
-                </div>
-            </c:if>
-        </div>
-    </main>
+                </c:if>
+            </div>
 
+            <!-- CSAT Rating Card (Employee - for resolved/closed tickets) -->
+            <c:set var="statusLowerSide" value="${fn:toLowerCase(ticket.status)}" />
+            <c:if test="${(statusLowerSide == 'resolved' || statusLowerSide == 'closed') && sessionScope.role != 'Admin'}">
+                <div class="meta-card" style="border-color: #fef3c7;">
+                    <div class="meta-card-title" style="color: #d97706;">
+                        <span>Rate This Support</span>
+                        <i class="fas fa-star"></i>
+                    </div>
+
+                    <c:choose>
+                        <c:when test="${not empty ticketRating}">
+                            <!-- Already rated - show existing -->
+                            <div style="text-align: center; padding: 8px 0;">
+                                <div style="font-size: 24px; font-weight: 800; color: #d97706; margin-bottom: 4px;">
+                                    ${ticketRating.rating}/5
+                                </div>
+                                <div style="font-size: 22px; color: #fbbf24; letter-spacing: 2px; margin-bottom: 10px;">
+                                    <c:forEach begin="1" end="5" var="star">
+                                        <c:choose>
+                                            <c:when test="${star <= ticketRating.rating}">&#9733;</c:when>
+                                            <c:otherwise>&#9734;</c:otherwise>
+                                        </c:choose>
+                                    </c:forEach>
+                                </div>
+                                <div style="font-size: 12px; color: var(--text-muted);">
+                                    Thank you for your feedback!
+                                </div>
+                                <c:if test="${not empty ticketRating.feedback}">
+                                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px; font-style: italic; padding: 8px; background: #fffbeb; border-radius: 6px; text-align: left;">
+                                        "${ticketRating.feedback}"
+                                    </div>
+                                </c:if>
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <!-- Rating form -->
+                            <c:if test="${param.rated == 'true'}">
+                                <div style="background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; padding:8px 12px; border-radius:8px; font-size:12px; font-weight:600; margin-bottom:12px;">
+                                    <i class="fas fa-check-circle"></i> Rating submitted. Thank you!
+                                </div>
+                            </c:if>
+                            <form action="${pageContext.request.contextPath}/RateTicket" method="POST">
+                                <input type="hidden" name="ticketId" value="${ticket.id}">
+
+                                <div style="margin-bottom: 12px;">
+                                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 8px; font-weight: 500;">How would you rate this support?</label>
+                                    <div style="display: flex; gap: 6px; justify-content: center; margin-bottom: 12px;">
+                                        <c:forEach begin="1" end="5" var="star">
+                                            <label style="cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                                                <input type="radio" name="rating" value="${star}" style="display:none;"
+                                                       onchange="updateStarDisplay(${star})"
+                                                       ${star == 5 ? 'checked' : ''}>
+                                                <span id="star-${star}" style="font-size: 24px; color: #fbbf24; transition: transform 0.1s ease; cursor: pointer;"
+                                                      onclick="selectStar(${star})">&#9733;</span>
+                                                <span style="font-size: 10px; color: var(--text-muted);">${star}</span>
+                                            </label>
+                                        </c:forEach>
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom: 12px;">
+                                    <textarea name="feedback" class="form-control no-icon" rows="2"
+                                              placeholder="Optional: Leave a comment about this support experience..."
+                                              style="font-size: 12px; resize: none;"></textarea>
+                                </div>
+
+                                <button type="submit" class="btn-header-action btn-accent" style="width: 100%; justify-content: center; font-size: 12px;">
+                                    <i class="fas fa-paper-plane"></i> Submit Rating
+                                </button>
+                            </form>
+                        </c:otherwise>
+                    </c:choose>
+                </div>
+            </c:if>
+
+            <!-- Admin Danger Zone -->
+            <c:if test="${sessionScope.role == 'Admin'}">
+                <div class="meta-card" style="border-color: #fee2e2;">
+                    <div class="meta-card-title" style="color: #dc2626;">
+                        <span>Danger Zone</span>
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <form action="${pageContext.request.contextPath}/UpdateTicket" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete this ticket and all its comments?');">
+                        <input type="hidden" name="ticketId" value="${ticket.id}">
+                        <input type="hidden" name="action" value="deleteTicket">
+                        <button type="submit" class="btn-sidebar-danger">
+                            <i class="fas fa-trash-alt"></i> Delete Incident
+                        </button>
+                    </form>
+                </div>
+            </c:if>
+
+
+
+        </aside>
+
+    </div>
+
+    <!-- Client-side script for Reply Composer & auto-scroll -->
     <script>
-        function toggleUserMenu() {
-            document.getElementById("userDropdown").classList.toggle("show");
-        }
-        
-        window.onclick = function(event) {
-            if (!event.target.matches('.avatar') && !event.target.closest('.avatar')) {
-                var dropdowns = document.getElementsByClassName("user-dropdown");
-                for (var i = 0; i < dropdowns.length; i++) {
-                    var openDropdown = dropdowns[i];
-                    if (openDropdown.classList.contains('show')) {
-                        openDropdown.classList.remove('show');
-                    }
-                }
+        function setReplyMode(mode) {
+            let tabPublic = document.getElementById('tabPublic');
+            let tabInternal = document.getElementById('tabInternal');
+            let container = document.getElementById('replyContainer');
+            let textarea = document.getElementById('commentText');
+            let hiddenInput = document.getElementById('isInternalInput');
+            let btnSubmit = document.getElementById('btnSubmitReply');
+            let helpText = document.getElementById('replyHelpText');
+
+            if (mode === 'internal') {
+                tabPublic.classList.remove('active');
+                tabInternal.classList.add('internal-active');
+                container.classList.add('internal-mode');
+                hiddenInput.value = "true";
+                textarea.placeholder = "Write an internal diagnostic note (only visible to IT Support)...";
+                btnSubmit.classList.add('btn-internal-send');
+                btnSubmit.innerHTML = '<span>Save Internal Note</span> <i class="fas fa-lock"></i>';
+                helpText.innerHTML = '<i class="fas fa-lock" style="color:#d97706;"></i> <strong>Private</strong> - Visible only to IT personnel';
+            } else {
+                tabInternal.classList.remove('internal-active');
+                tabPublic.classList.add('active');
+                container.classList.remove('internal-mode');
+                hiddenInput.value = "false";
+                textarea.placeholder = "Type your response to the requester here...";
+                btnSubmit.classList.remove('btn-internal-send');
+                btnSubmit.innerHTML = '<span>Send Reply</span> <i class="fas fa-paper-plane"></i>';
+                helpText.innerHTML = '<i class="fas fa-globe"></i> Visible to employee and IT team';
             }
         }
-        
-        // Auto scroll thread to bottom
+
+        // Auto scroll to bottom of stream on load
         window.onload = function() {
-            var thread = document.querySelector('.thread-content');
-            if (thread) {
-                thread.scrollTop = thread.scrollHeight;
+            let stream = document.getElementById('discussionStream');
+            if (stream) {
+                stream.scrollTop = stream.scrollHeight;
+            }
+        };
+
+        // CSAT Star Rating interaction
+        function selectStar(rating) {
+            let radios = document.querySelectorAll('input[name="rating"]');
+            radios.forEach(r => {
+                if (parseInt(r.value) === rating) r.checked = true;
+            });
+            updateStarDisplay(rating);
+        }
+
+        function updateStarDisplay(rating) {
+            for (let i = 1; i <= 5; i++) {
+                let star = document.getElementById('star-' + i);
+                if (star) {
+                    if (i <= rating) {
+                        star.style.color = '#f59e0b';
+                        star.style.transform = 'scale(1.2)';
+                    } else {
+                        star.style.color = '#d1d5db';
+                        star.style.transform = 'scale(1)';
+                    }
+                }
             }
         }
     </script>

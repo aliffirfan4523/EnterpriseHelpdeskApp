@@ -1,5 +1,6 @@
 package com.helpdesk.web;
 
+import com.helpdesk.domain.meta.Tag;
 import com.helpdesk.ejb.TicketManagerBean;
 import com.helpdesk.ejb.DiscussionManagerBean;
 import java.io.IOException;
@@ -30,6 +31,7 @@ public class UpdateTicketServlet extends HttpServlet {
             return;
         }
 
+        Integer actorUserId = (Integer) session.getAttribute("userId");
         String ticketIdStr = request.getParameter("ticketId");
         String action = request.getParameter("action");
 
@@ -38,11 +40,45 @@ public class UpdateTicketServlet extends HttpServlet {
 
             if ("updateStatus".equals(action)) {
                 String newStatus = request.getParameter("status");
-                ticketManagerBean.updateTicketStatus(ticketId, newStatus);
+                if (newStatus != null && !newStatus.trim().isEmpty()) {
+                    ticketManagerBean.updateTicketStatus(ticketId, newStatus.trim(), actorUserId);
+                }
+            } else if ("updatePriority".equals(action)) {
+                String priorityIdStr = request.getParameter("priorityId");
+                if (priorityIdStr != null && !priorityIdStr.isEmpty()) {
+                    int priorityId = Integer.parseInt(priorityIdStr);
+                    ticketManagerBean.updateTicketPriority(ticketId, priorityId, actorUserId);
+                }
+            } else if ("assignTicket".equals(action)) {
+                String adminIdStr = request.getParameter("adminId");
+                Integer adminId = (adminIdStr != null && !adminIdStr.isEmpty() && !adminIdStr.equals("0")) ? Integer.parseInt(adminIdStr) : null;
+                ticketManagerBean.assignTicket(ticketId, adminId, actorUserId);
             } else if ("addTag".equals(action)) {
                 String tagIdStr = request.getParameter("tagId");
-                int tagId = Integer.parseInt(tagIdStr);
-                discussionManager.assignTagToTicket(ticketId, tagId);
+                if (tagIdStr != null && !tagIdStr.isEmpty()) {
+                    int tagId = Integer.parseInt(tagIdStr);
+                    discussionManager.assignTagToTicket(ticketId, tagId);
+                    ticketManagerBean.logAudit(ticketId, actorUserId, "Tag Added", "Assigned tag ID " + tagId);
+                }
+            } else if ("createTag".equals(action)) {
+                String newTagName = request.getParameter("newTagName");
+                if (newTagName != null && !newTagName.trim().isEmpty()) {
+                    Tag created = discussionManager.createTag(newTagName.trim());
+                    if (created != null) {
+                        discussionManager.assignTagToTicket(ticketId, created.getId());
+                        ticketManagerBean.logAudit(ticketId, actorUserId, "Tag Created & Added", "Created tag '" + newTagName.trim() + "'");
+                    }
+                }
+            } else if ("removeTag".equals(action)) {
+                String tagIdStr = request.getParameter("tagId");
+                if (tagIdStr != null && !tagIdStr.isEmpty()) {
+                    int tagId = Integer.parseInt(tagIdStr);
+                    ticketManagerBean.removeTagFromTicket(ticketId, tagId);
+                }
+            } else if ("deleteTicket".equals(action)) {
+                ticketManagerBean.deleteTicket(ticketId);
+                response.sendRedirect(request.getContextPath() + "/AdminDashboard?deleted=true");
+                return;
             }
 
             response.sendRedirect(request.getContextPath() + "/ViewTicket?ticketId=" + ticketId);

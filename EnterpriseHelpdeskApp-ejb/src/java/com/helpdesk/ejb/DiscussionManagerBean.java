@@ -37,10 +37,26 @@ public class DiscussionManagerBean {
         Tag tag = em.find(Tag.class, tagId);
         
         if (ticket != null && tag != null) {
-            // Add the tag to the ticket's list
-            ticket.getTags().add(tag);
-            // JPA automatically updates the ticket_tags junction table!
-            em.merge(ticket);
+            // Add the tag to the ticket's list if not already present
+            if (!ticket.getTags().contains(tag)) {
+                ticket.getTags().add(tag);
+                em.merge(ticket);
+            }
         }
+    }
+
+    public Tag createTag(String name) {
+        if (name == null || name.trim().isEmpty()) return null;
+        String cleanName = name.trim();
+        List<Tag> existing = em.createQuery("SELECT t FROM Tag t WHERE LOWER(t.name) = :name", Tag.class)
+                .setParameter("name", cleanName.toLowerCase())
+                .getResultList();
+        if (!existing.isEmpty()) {
+            return existing.get(0);
+        }
+        Tag tag = new Tag();
+        tag.setName(cleanName);
+        em.persist(tag);
+        return tag;
     }
 }

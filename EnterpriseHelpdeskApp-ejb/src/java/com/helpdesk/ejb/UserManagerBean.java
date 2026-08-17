@@ -73,4 +73,43 @@ public class UserManagerBean {
     public User findUserById(int id) {
         return em.find(User.class, id);
     }
+
+    public List<User> getAllUsers() {
+        return em.createQuery("SELECT u FROM User u ORDER BY u.id DESC", User.class).getResultList();
+    }
+
+    public void deleteUser(int userId) {
+        User u = em.find(User.class, userId);
+        if (u != null) {
+            em.remove(u);
+        }
+    }
+
+    public void updateUserRole(int userId, String newRole) {
+        User u = em.find(User.class, userId);
+        if (u != null) {
+            u.setRole(newRole);
+            em.merge(u);
+        }
+    }
+
+    public void resetUserPassword(int userId, String newPassword) {
+        User u = em.find(User.class, userId);
+        if (u != null && newPassword != null && !newPassword.trim().isEmpty()) {
+            u.setPassword(hashPassword(newPassword.trim()));
+            em.merge(u);
+        }
+    }
+
+    public List<User> getAllAdmins() {
+        return em.createQuery("SELECT u FROM User u WHERE u.role = 'Admin' ORDER BY u.name ASC", User.class).getResultList();
+    }
+
+    public List<com.helpdesk.domain.core.Priority> getAllPriorities() {
+        return em.createQuery("SELECT p FROM Priority p ORDER BY p.resolveHours ASC", com.helpdesk.domain.core.Priority.class).getResultList();
+    }
+
+    public com.helpdesk.domain.core.Priority findPriorityById(int id) {
+        return em.find(com.helpdesk.domain.core.Priority.class, id);
+    }
 }

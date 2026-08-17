@@ -1,8 +1,13 @@
 package com.helpdesk.web;
 
 import com.helpdesk.domain.core.Ticket;
+import com.helpdesk.ejb.DiscussionManagerBean;
+import com.helpdesk.ejb.HelpdeskBean;
 import com.helpdesk.ejb.TicketManagerBean;
+import com.helpdesk.ejb.UserManagerBean;
+
 import java.io.IOException;
+import java.util.Date;
 import javax.ejb.EJB;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -18,7 +23,13 @@ public class ViewTicketServlet extends HttpServlet {
     private TicketManagerBean ticketManagerBean;
 
     @EJB
-    private com.helpdesk.ejb.DiscussionManagerBean discussionManager;
+    private DiscussionManagerBean discussionManager;
+
+    @EJB
+    private UserManagerBean userManagerBean;
+
+    @EJB
+    private HelpdeskBean helpdeskBean;
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -37,8 +48,21 @@ public class ViewTicketServlet extends HttpServlet {
                 Ticket ticket = ticketManagerBean.findTicketById(ticketId);
                 
                 if (ticket != null) {
+                    int resolveHours = ticket.getPriority() != null ? ticket.getPriority().getResolveHours() : 24;
+                    Date deadline = helpdeskBean.calculateDeadline(ticket.getDateCreated(), resolveHours);
+                    String slaStatus = helpdeskBean.getSlaStatus(ticket.getDateCreated(), resolveHours, ticket.getStatus());
+                    String slaRemaining = helpdeskBean.getTimeRemainingFormatted(ticket.getDateCreated(), resolveHours, ticket.getStatus());
+
                     request.setAttribute("ticket", ticket);
+                    request.setAttribute("slaDeadline", deadline);
+                    request.setAttribute("slaStatus", slaStatus);
+                    request.setAttribute("slaRemaining", slaRemaining);
                     request.setAttribute("allTags", discussionManager.getAllTags());
+                    request.setAttribute("allAdmins", userManagerBean.getAllAdmins());
+                    request.setAttribute("allPriorities", userManagerBean.getAllPriorities());
+                    request.setAttribute("helpdeskBean", helpdeskBean);
+                    request.setAttribute("ticketRating", ticketManagerBean.getRatingForTicket(ticketId));
+
                     request.getRequestDispatcher("/ticket-details.jsp").forward(request, response);
                     return;
                 }

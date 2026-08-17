@@ -6,6 +6,8 @@ package com.helpdesk.domain.core;
 
 import com.helpdesk.domain.meta.Comment;
 import com.helpdesk.domain.meta.Tag;
+import com.helpdesk.domain.meta.TicketRating;
+import com.helpdesk.domain.meta.TicketAuditLog;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
@@ -31,6 +33,9 @@ public class Ticket implements Serializable {
     @Column(length = 20)
     private String status;
 
+    @Column(length = 50)
+    private String category = "General Support";
+
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "date_created", insertable = false, updatable = false)
     private Date dateCreated;
@@ -43,10 +48,21 @@ public class Ticket implements Serializable {
     @JoinColumn(name = "priority_id", nullable = false)
     private Priority priority;
 
-    @OneToMany(mappedBy = "ticket")
+    @ManyToOne
+    @JoinColumn(name = "assigned_to")
+    private User assignedTo;
+
+    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL)
     private List<Comment> comments;
 
-    // Here is your Many-To-Many relationship resolution
+    @OneToOne(mappedBy = "ticket", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private TicketRating rating;
+
+    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL)
+    @OrderBy("loggedAt DESC")
+    private List<TicketAuditLog> auditLogs;
+
+    // Many-To-Many relationship with tags
     @ManyToMany
     @JoinTable(
         name = "ticket_tags",
@@ -87,6 +103,14 @@ public class Ticket implements Serializable {
         this.status = status;
     }
 
+    public String getCategory() {
+        return category != null ? category : "General Support";
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
     public Date getDateCreated() {
         return dateCreated;
     }
@@ -111,6 +135,14 @@ public class Ticket implements Serializable {
         this.priority = priority;
     }
 
+    public User getAssignedTo() {
+        return assignedTo;
+    }
+
+    public void setAssignedTo(User assignedTo) {
+        this.assignedTo = assignedTo;
+    }
+
     public List<Comment> getComments() {
         return comments;
     }
@@ -127,5 +159,19 @@ public class Ticket implements Serializable {
         this.tags = tags;
     }
 
-    
+    public TicketRating getRating() {
+        return rating;
+    }
+
+    public void setRating(TicketRating rating) {
+        this.rating = rating;
+    }
+
+    public List<TicketAuditLog> getAuditLogs() {
+        return auditLogs;
+    }
+
+    public void setAuditLogs(List<TicketAuditLog> auditLogs) {
+        this.auditLogs = auditLogs;
+    }
 }
